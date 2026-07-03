@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Prenotazioni · Lou Tchappé</title>
+<meta name="theme-color" content="#FAF7F2">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Prenotazioni">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <div class="offline-badge" id="offlineBadge">📡 Offline</div>
+  <div class="sync-indicator" id="syncIndicator">⏳ Sincronizzazione…</div>
+  <div class="toast" id="toast"></div>
+
+  <!-- ===================== LOGIN ===================== -->
+  <section class="screen active" id="screen-login">
+    <div class="setup-wrap">
+      <div class="setup-logo">🍽️</div>
+      <h1 class="setup-title">Lou Tchappé</h1>
+      <p class="setup-subtitle">Inserisci la password per accedere alle prenotazioni.</p>
+      <div class="setup-card">
+        <div class="field-group">
+          <label class="field-label" for="loginPassword">Password</label>
+          <input type="password" class="text-input" id="loginPassword"
+            placeholder="Password" autocomplete="off" autocorrect="off">
+        </div>
+        <p class="setup-error hidden" id="loginError">Password non corretta.</p>
+        <button class="save-btn" id="loginBtn" style="margin-top:8px">Accedi</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DASHBOARD ===================== -->
+  <section class="screen" id="screen-dashboard">
+    <div class="topbar">
+      <h1>Prenotazioni</h1>
+      <button class="icon-btn" id="refreshBtn">🔄</button>
+    </div>
+    <div class="dashboard-content">
+      <div class="date-service-card">
+        <div class="date-row">
+          <button class="date-nav-btn" id="dashPrevDay">‹</button>
+          <span class="date-label" id="dashDateLabel">Oggi</span>
+          <button class="date-nav-btn" id="dashNextDay">›</button>
+        </div>
+        <div class="service-toggle">
+          <button data-service="lunch" id="btnServiceLunch">Pranzo</button>
+          <button data-service="dinner" id="btnServiceDinner">Cena</button>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <span class="stat-value" id="statGuests">0</span>
+          <span class="stat-label">Coperti totali</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-value" id="statTables">0</span>
+          <span class="stat-label">Tavoli prenotati</span>
+        </div>
+      </div>
+      <div class="timeline-card">
+        <h3>Timeline orari</h3>
+        <div class="timeline-scroll" id="dashTimeline"></div>
+      </div>
+    </div>
+    <button class="fab-new-booking hidden" id="fabNewBooking">＋ Nuova prenotazione</button>
+  </section>
+
+  <!-- ===================== LISTA ===================== -->
+  <section class="screen" id="screen-list">
+    <div class="topbar">
+      <h1>Prenotazioni</h1>
+      <button class="icon-btn" id="openPreviewBtn">🖼️</button>
+    </div>
+    <div class="dashboard-content" style="padding-bottom:0">
+      <div class="date-service-card">
+        <div class="date-row">
+          <button class="date-nav-btn" id="listPrevDay">‹</button>
+          <span class="date-label" id="listDateLabel">Oggi</span>
+          <button class="date-nav-btn" id="listNextDay">›</button>
+        </div>
+        <div class="service-toggle">
+          <button data-service="lunch" id="listBtnLunch">Pranzo</button>
+          <button data-service="dinner" id="listBtnDinner">Cena</button>
+        </div>
+      </div>
+    </div>
+    <div class="list-content" id="listContent"></div>
+    <button class="fab-new-booking hidden" id="fabNewBookingList">＋ Nuova prenotazione</button>
+  </section>
+
+  <!-- ===================== RICERCA ===================== -->
+  <section class="screen" id="screen-search">
+    <div class="topbar"><h1>Ricerca</h1></div>
+    <div class="search-bar-wrap">
+      <input type="text" class="search-input" id="searchInput" placeholder="Nome, telefono o data…" autocomplete="off">
+    </div>
+    <div class="list-content" id="searchResults"></div>
+  </section>
+
+  <!-- ===================== ANTEPRIMA ===================== -->
+  <section class="screen" id="screen-preview">
+    <div class="topbar">
+      <button class="icon-btn" id="previewBackBtn">←</button>
+      <h1>Anteprima</h1>
+    </div>
+    <div class="dashboard-content" style="padding-bottom:0">
+      <div class="date-service-card">
+        <div class="date-row">
+          <button class="date-nav-btn" id="previewPrevDay">‹</button>
+          <span class="date-label" id="previewDateLabel">Oggi</span>
+          <button class="date-nav-btn" id="previewNextDay">›</button>
+        </div>
+        <div class="service-toggle">
+          <button data-service="lunch" id="previewBtnLunch">Pranzo</button>
+          <button data-service="dinner" id="previewBtnDinner">Cena</button>
+        </div>
+      </div>
+    </div>
+    <p class="preview-hint">Fai uno screenshot e mandalo ai colleghi.</p>
+    <div class="preview-sheet">
+      <div class="preview-sheet-header">
+        <h2 id="previewSheetTitle">Cena · Oggi</h2>
+        <div class="preview-sheet-stats" id="previewSheetStats"></div>
+      </div>
+      <div class="preview-sheet-list" id="previewSheetList"></div>
+    </div>
+    <div style="height:32px"></div>
+  </section>
+
+  <!-- ===================== IMPOSTAZIONI ===================== -->
+  <section class="screen" id="screen-config">
+    <div class="topbar"><h1>Impostazioni</h1></div>
+    <div class="config-content">
+      <div class="config-section">
+        <h3>Tavoli</h3>
+        <div class="config-row"><label>Tavoli interni</label><input type="number" min="0" class="config-number-input" id="cfgTablesIndoor"></div>
+        <div class="config-row"><label>Tavoli esterni</label><input type="number" min="0" class="config-number-input" id="cfgTablesOutdoor"></div>
+      </div>
+      <div class="config-section">
+        <h3>Orari</h3>
+        <div class="config-row"><label>Pranzo dalle</label><input type="time" class="config-time-input" id="cfgLunchStart"></div>
+        <div class="config-row"><label>Pranzo alle</label><input type="time" class="config-time-input" id="cfgLunchEnd"></div>
+        <div class="config-row"><label>Cena dalle</label><input type="time" class="config-time-input" id="cfgDinnerStart"></div>
+        <div class="config-row"><label>Cena alle</label><input type="time" class="config-time-input" id="cfgDinnerEnd"></div>
+      </div>
+      <div class="config-section">
+        <h3>Slot e limiti</h3>
+        <div class="config-row"><label>Durata slot (min)</label><input type="number" min="5" step="5" class="config-number-input" id="cfgSlotDuration"></div>
+        <div class="config-row"><label>Max prenotazioni per slot</label><input type="number" min="1" class="config-number-input" id="cfgMaxPerSlot"></div>
+      </div>
+      <div class="config-section">
+        <h3>Doppio turno (cena)</h3>
+        <div class="day-toggles" id="cfgDoubleShiftDays">
+          <button class="day-toggle" data-day="1">L</button>
+          <button class="day-toggle" data-day="2">M</button>
+          <button class="day-toggle" data-day="3">M</button>
+          <button class="day-toggle" data-day="4">G</button>
+          <button class="day-toggle" data-day="5">V</button>
+          <button class="day-toggle" data-day="6">S</button>
+          <button class="day-toggle" data-day="0">D</button>
+        </div>
+        <div class="config-row" style="margin-top:12px"><label>Durata occupazione (min)</label><input type="number" min="15" step="5" class="config-number-input" id="cfgDoubleShiftDuration"></div>
+      </div>
+      <div class="config-section">
+        <h3>Account</h3>
+        <div class="config-row">
+          <label>Ruolo attivo</label>
+          <span id="cfgRole" style="font-weight:700;color:var(--color-primary)"></span>
+        </div>
+        <button class="save-btn" id="logoutBtn" style="background:var(--color-surface-alt);color:var(--color-ink);height:48px;font-size:14px;margin-top:8px">
+          Esci (cambia account)
+        </button>
+      </div>
+      <div class="config-save-confirm" id="cfgSaveConfirm">✓ Salvato</div>
+    </div>
+  </section>
+
+  <!-- ===================== FORM PRENOTAZIONE ===================== -->
+  <section class="screen" id="screen-form">
+    <div class="topbar">
+      <button class="icon-btn" id="formBackBtn">←</button>
+      <h1 id="formTitle">Nuova prenotazione</h1>
+    </div>
+    <div class="form-content">
+      <div class="field-group">
+        <label class="field-label">Nome</label>
+        <input type="text" class="text-input" id="fName" placeholder="Nome cliente" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Numero di persone</label>
+        <div class="people-stepper">
+          <button class="stepper-btn" id="peopleMinus">−</button>
+          <span class="stepper-value" id="peopleValue">2</span>
+          <button class="stepper-btn" id="peoplePlus">+</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Data</label>
+        <input type="date" class="text-input" id="fDate">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Servizio</label>
+        <div class="service-options" id="formServiceOptions">
+          <button class="service-btn" data-service="lunch">Pranzo</button>
+          <button class="service-btn" data-service="dinner">Cena</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Orario</label>
+        <div class="slot-grid" id="formSlotGrid"></div>
+      </div>
+      <div class="slot-suggestion hidden" id="slotSuggestionBox">
+        <span class="suggestion-title">⚠️ Orario al completo</span>
+        <span id="suggestionText"></span>
+        <div class="suggestion-chips" id="suggestionChips"></div>
+      </div>
+      <div class="double-shift-alert hidden" id="doubleShiftAlert">
+        <span class="alert-icon">⏱️</span>
+        <span id="doubleShiftText"></span>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Zona richiesta</label>
+        <div class="zone-options" id="formZoneOptions">
+          <button class="zone-btn" data-zone="indoor"><span class="zone-icon">🏠</span>Interno</button>
+          <button class="zone-btn" data-zone="outdoor"><span class="zone-icon">🌿</span>Esterno</button>
+          <button class="zone-btn" data-zone="any"><span class="zone-icon">↔️</span>Indifferente</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Telefono</label>
+        <input type="tel" class="text-input" id="fPhone" placeholder="Numero di telefono" inputmode="tel" autocomplete="off">
+      </div>
+      <div class="optional-toggle" id="optionalToggle">
+        <span>Cani, intolleranze, note…</span>
+        <span class="chevron">⌄</span>
+      </div>
+      <div class="optional-fields" id="optionalFields">
+        <div class="field-group">
+          <label class="field-label">Cani</label>
+          <div class="dogs-stepper">
+            <button class="stepper-btn" id="dogsMinus">−</button>
+            <span class="stepper-value" id="dogsValue">0</span>
+            <button class="stepper-btn" id="dogsPlus">+</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Intolleranze</label>
+          <textarea class="text-input" id="fIntolerances" placeholder="Es. glutine, lattosio…"></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Esigenze particolari</label>
+          <textarea class="text-input" id="fSpecialNeeds" placeholder="Es. seggiolone, carrozzina…"></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Note</label>
+          <textarea class="text-input" id="fNotes" placeholder="Note libere…"></textarea>
+        </div>
+      </div>
+      <div class="field-group hidden" id="statusFieldGroup">
+        <label class="field-label">Stato</label>
+        <div class="status-options" id="formStatusOptions"></div>
+      </div>
+      <a href="#" class="delete-link hidden" id="deleteLink">Cancella prenotazione</a>
+      <div style="height:100px"></div>
+    </div>
+    <div class="form-footer">
+      <button class="save-btn" id="saveBtn" disabled>Salva prenotazione</button>
+    </div>
+  </section>
+
+  <!-- ===================== VISTA SOLA LETTURA ===================== -->
+  <section class="screen" id="screen-readonly">
+    <div class="topbar">
+      <h1>Lou Tchappé</h1>
+    </div>
+    <div class="dashboard-content" style="padding-bottom:0">
+      <div class="date-service-card">
+        <div class="date-row">
+          <button class="date-nav-btn" id="roPrevDay">‹</button>
+          <span class="date-label" id="roDateLabel">Oggi</span>
+          <button class="date-nav-btn" id="roNextDay">›</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="list-content" style="gap:0; padding-top:0">
+
+      <!-- PRANZO -->
+      <div class="ro-service-section" id="ro-lunch-section">
+        <div class="ro-service-header">
+          <span class="ro-service-title">🌤️ Pranzo</span>
+          <span class="ro-service-stats" id="ro-lunch-stats"></span>
+        </div>
+        <div id="ro-lunch-list"></div>
+      </div>
+
+      <!-- CENA -->
+      <div class="ro-service-section" id="ro-dinner-section">
+        <div class="ro-service-header">
+          <span class="ro-service-title">🌙 Cena</span>
+          <span class="ro-service-stats" id="ro-dinner-stats"></span>
+        </div>
+        <div id="ro-dinner-list"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" id="bottomNav" style="display:none">
+    <button class="nav-item" data-screen="dashboard"><span class="nav-icon">🏠</span>Home</button>
+    <button class="nav-item" data-screen="list"><span class="nav-icon">📋</span>Lista</button>
+    <button class="nav-item" data-screen="search"><span class="nav-icon">🔍</span>Cerca</button>
+    <button class="nav-item" data-screen="config"><span class="nav-icon">⚙️</span>Impostazioni</button>
+  </nav>
+
+  <!-- MODAL CANCELLAZIONE -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal-sheet">
+      <h3>Cancellare questa prenotazione?</h3>
+      <p style="color:var(--color-ink-soft);font-size:14px">L'operazione non si può annullare.</p>
+      <div class="modal-actions">
+        <button class="modal-btn-cancel" id="deleteModalCancel">Annulla</button>
+        <button class="modal-btn-confirm" id="deleteModalConfirm">Cancella</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+<script src="js/storage.js"></script>
+<script src="js/config.js"></script>
+<script src="js/slots.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/db.js"></script>
+<script src="js/bookings.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
