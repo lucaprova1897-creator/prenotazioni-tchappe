@@ -28,6 +28,20 @@ const Slots = {
   },
 
   /**
+   * Arrotonda un orario allo slot più vicino (default: durata slot da
+   * configurazione, es. 15 minuti) — usato per i walk-in: chi arriva alle
+   * 19:02 viene registrato come 19:00, chi arriva alle 14:10 come 14:15.
+   * Senza, le statistiche di affluenza avrebbero un orario diverso per
+   * ogni singolo arrivo invece di raggrupparsi per fascia.
+   */
+  roundToNearestSlot(time, stepMinutes) {
+    const step = stepMinutes || Config.load().slotDurationMinutes || 15;
+    const minutes = this.toMinutes(time);
+    const rounded = Math.round(minutes / step) * step;
+    return this.toHHMM(rounded);
+  },
+
+  /**
    * Genera la lista di tutti gli slot orari ("HH:MM") di un servizio,
    * dato lo step in minuti. L'ultimo slot generato è tale che lo slot
    * stesso inizi prima della chiusura (non genera uno slot esattamente = end).
@@ -61,7 +75,7 @@ const Slots = {
     for (const b of bookings) {
       if (b.date !== dateISO) continue;
       if (b.service !== serviceKey) continue;
-      if (b.status === 'cancelled') continue;
+      if (b.status === 'cancelled' || b.status === 'archived' || b.status === 'completed') continue;
       if (counts[b.time] !== undefined) {
         counts[b.time] += 1;
       }
@@ -116,33 +130,6 @@ const Slots = {
       }
     }
     return result;
-  },
-
-  /**
-   * Determina se una data+servizio+orario rientra nel doppio turno.
-   * Ritorna null se non si applica, oppure { releaseTime } se sì.
-   */
-  getDoubleShiftInfo(serviceKey, dateISO, time) {
-    const cfg = Config.load();
-    if (serviceKey !== cfg.doubleShiftService) return null;
-
-    // dateISO è "YYYY-MM-DD": costruiamo una Date locale (evitando shift UTC)
-    const [y, m, d] = dateISO.split('-').map(Number);
-    const dateObj = new Date(y, m - 1, d);
-
-    if (!Config.isDoubleShiftDay(dateObj)) return null;
-
-    const releaseMinutes = this.toMinutes(time) + cfg.doubleShiftDurationMinutes;
-    return {
-      releaseTime: this.toHHMM(releaseMinutes),
-    };
-  },
-
-  /**
-   * Formatta in italiano un orario di rilascio tavolo per il messaggio di avviso.
-   */
-  formatDoubleShiftMessage(time, releaseTime) {
-    return `Doppio turno: il tavolo prenotato per le ${time} dovrà liberarsi entro le ${releaseTime}.`;
   },
 };
 

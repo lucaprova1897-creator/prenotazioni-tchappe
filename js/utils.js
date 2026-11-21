@@ -47,6 +47,35 @@ const Utils = {
   },
 
   /**
+   * Come currentService(), ma passa in automatico al servizio successivo
+   * (e al giorno dopo, dopo cena) con un margine dopo la chiusura — così
+   * chi apre l'app alle 14:45 (15 min dopo la fine del pranzo delle 14:30)
+   * si trova già sulla cena, non deve navigare a mano. Usata solo quando si
+   * apre l'app: non tocca la scelta di data/servizio già fatta a mano.
+   */
+  currentServiceAndDate(bufferMinutes) {
+    const buffer = bufferMinutes || 15;
+    const cfg = Config.load();
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const today = Utils.todayISO();
+
+    const lunchEnd = Slots.toMinutes(cfg.services.lunch.end);
+    const dinnerEnd = Slots.toMinutes(cfg.services.dinner.end);
+
+    if (nowMinutes < lunchEnd + buffer) {
+      return { service: 'lunch', date: today };
+    }
+    if (nowMinutes < dinnerEnd + buffer) {
+      return { service: 'dinner', date: today };
+    }
+    // Dopo la cena (+ margine): si passa al pranzo di domani
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return { service: 'lunch', date: Utils.dateToISO(tomorrow) };
+  },
+
+  /**
    * Formatta una data ISO in italiano leggibile, es. "Giovedì 26 giugno".
    */
   formatDateLong(iso) {
@@ -62,6 +91,29 @@ const Utils = {
   formatDateShort(iso) {
     const d = this.isoToDate(iso);
     return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  },
+
+  /**
+   * Quanti giorni mancano da oggi a una data — usato per "tra N giorni"
+   * nella sezione Eventi. Positivo se nel futuro, 0 se oggi, negativo se passata.
+   */
+  daysUntil(iso) {
+    const today = this.isoToDate(this.todayISO());
+    const target = this.isoToDate(iso);
+    return Math.round((target - today) / 86400000);
+  },
+
+  /**
+   * Etichetta leggibile "Oggi" / "Domani" / "tra N giorni" per una data
+   * futura — usata nella sezione Eventi della Home.
+   */
+  relativeDayLabel(iso) {
+    const n = this.daysUntil(iso);
+    if (n === 0) return 'Oggi';
+    if (n === 1) return 'Domani';
+    if (n > 1) return 'Tra ' + n + ' giorni';
+    if (n === -1) return 'Ieri';
+    return this.formatDateShort(iso);
   },
 
   /**

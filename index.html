@@ -4,13 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Prenotazioni · Lou Tchappé</title>
-<meta name="theme-color" content="#FAF7F2">
-<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#F6F3EE">
+<link rel="manifest" href="manifest.json?v=1791600000">
+<link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Prenotazioni">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=1791600000">
 </head>
 <body>
 <div id="app">
@@ -22,7 +24,7 @@
   <!-- ===================== LOGIN ===================== -->
   <section class="screen active" id="screen-login">
     <div class="setup-wrap">
-      <div class="setup-logo">🍽️</div>
+      <img src="icons/logo-mark.png" alt="Lou Tchappé" class="setup-logo-img">
       <h1 class="setup-title">Lou Tchappé</h1>
       <p class="setup-subtitle">Inserisci la password per accedere alle prenotazioni.</p>
       <div class="setup-card">
@@ -33,17 +35,25 @@
         </div>
         <p class="setup-error hidden" id="loginError">Password non corretta.</p>
         <button class="save-btn" id="loginBtn" style="margin-top:8px">Accedi</button>
+        <p class="login-hint">PIN dimenticato? Chiedi a un responsabile: può impostartene uno nuovo da Impostazioni.</p>
       </div>
+      <img src="icons/mountains.png" alt="" class="setup-mountains" aria-hidden="true">
     </div>
   </section>
 
   <!-- ===================== DASHBOARD ===================== -->
   <section class="screen" id="screen-dashboard">
     <div class="topbar">
-      <h1>Prenotazioni</h1>
+      <img src="icons/logo-mark.png" alt="" class="topbar-logo" aria-hidden="true">
+      <h1>Lou Tchappé</h1>
+      <button class="today-btn hidden" id="dashTodayBtn" title="Torna a oggi">📅 Oggi</button>
+      <span class="jump-date-icon" aria-hidden="true">📅</span>
+      <input type="date" class="jump-date-input" id="dashJumpDate" title="Vai a una data">
       <button class="icon-btn" id="refreshBtn">🔄</button>
     </div>
     <div class="dashboard-content">
+
+      <!-- Data e servizio -->
       <div class="date-service-card">
         <div class="date-row">
           <button class="date-nav-btn" id="dashPrevDay">‹</button>
@@ -55,28 +65,140 @@
           <button data-service="dinner" id="btnServiceDinner">Cena</button>
         </div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-box">
-          <span class="stat-value" id="statGuests">0</span>
-          <span class="stat-label">Coperti totali</span>
+
+      <!-- Stato servizio: numeri grandi + barra riempimento -->
+      <div class="service-status-card">
+        <div class="service-status-numbers">
+          <div class="service-status-item">
+            <span class="service-status-value" id="statGuests">0</span>
+            <span class="service-status-label">Coperti</span>
+          </div>
+          <div class="service-status-divider"></div>
+          <div class="service-status-item">
+            <span class="service-status-value" id="statTables">0</span>
+            <span class="service-status-label">Tavoli</span>
+          </div>
+          <div class="service-status-divider"></div>
+          <div class="service-status-item">
+            <span class="service-status-value" id="statLate">0</span>
+            <span class="service-status-label">Tavoli liberi</span>
+          </div>
         </div>
-        <div class="stat-box">
-          <span class="stat-value" id="statTables">0</span>
-          <span class="stat-label">Tavoli prenotati</span>
+        <div class="service-fill-bar">
+          <div class="service-fill-bar-inner" id="dashFillBar" style="width:0%"></div>
+        </div>
+        <div class="service-fill-label" id="dashFillLabel">Nessuna prenotazione</div>
+      </div>
+
+      <!-- Riepilogo giornata: prenotati vs fatti, pranzo e cena insieme -->
+      <div class="day-summary-card">
+        <h3>Riepilogo giornata</h3>
+        <div class="day-summary-table">
+          <div class="day-summary-header">
+            <span></span><span>Prenotati</span><span>Fatti</span>
+          </div>
+          <div class="day-summary-row">
+            <span class="day-summary-service">Pranzo</span>
+            <span id="daySummaryLunchBooked">0</span>
+            <span id="daySummaryLunchServed">0</span>
+          </div>
+          <div class="day-summary-row">
+            <span class="day-summary-service">Cena</span>
+            <span id="daySummaryDinnerBooked">0</span>
+            <span id="daySummaryDinnerServed">0</span>
+          </div>
         </div>
       </div>
-      <div class="timeline-card">
-        <h3>Timeline orari</h3>
-        <div class="timeline-scroll" id="dashTimeline"></div>
+
+      <!-- Proposte del giorno — un piccolo pulsante-riepilogo qui, il
+           contenuto vero vive nel pannello laterale fuori dal flusso
+           della pagina (vedi fondo file) così aprirlo non sposta né
+           allunga la Dashboard sottostante -->
+      <button type="button" class="ds-drawer-trigger" id="dailySpecialsDrawerTrigger">
+        <span class="ds-drawer-trigger-icon">🍽️</span>
+        <span class="ds-drawer-trigger-label">Menu di oggi</span>
+        <span class="ds-drawer-trigger-count" id="dailySpecialsDrawerCount"></span>
+        <span class="ds-urgent-dot hidden" id="dailySpecialsDrawerUrgentDot"></span>
+        <span class="ds-drawer-trigger-arrow">›</span>
+      </button>
+
+      <!-- Ordini di servizio (ODS): i numeri che contano a colpo d'occhio,
+           il contenuto vero vive nella schermata dedicata (js/ods.js) -->
+      <button type="button" class="ds-drawer-trigger" id="odsTrigger">
+        <span class="ds-drawer-trigger-icon">📋</span>
+        <span class="ds-drawer-trigger-label">Ordini di servizio</span>
+        <span class="ds-drawer-trigger-count" id="odsTriggerCount"></span>
+        <span class="ds-urgent-dot hidden" id="odsTriggerDot"></span>
+        <span class="ds-drawer-trigger-arrow">›</span>
+      </button>
+
+      <!-- Cucina libera — avvisa subito lo chef, non aspetta nessun
+           cambiamento nel database: un tocco, una notifica sul momento -->
+      <button type="button" class="kitchen-free-btn" id="kitchenFreeBtn">🍽️ Segnala cucina libera</button>
+
+      <!-- Eventi da organizzare — prenotazioni segnate a mano, o eventi
+           legati solo a un giorno (senza una prenotazione specifica) -->
+      <div class="events-card" id="dashEventsCard">
+        <div class="events-card-header">
+          <h3>🎉 Eventi in arrivo</h3>
+          <button type="button" id="dashNewDayEventBtn">＋ Nuovo</button>
+        </div>
+        <div id="dashEventsList"></div>
       </div>
+
+      <!-- Secondi turni del servizio in corso — tavoli condivisi da più
+           prenotazioni nello stesso giorno/servizio, confermati o
+           provvisori. Compare solo se ce n'è almeno uno. -->
+      <div class="events-card second-turns-card hidden" id="dashSecondTurnsCard">
+        <h3>🔄 Secondi turni · <span id="dashSecondTurnsService"></span></h3>
+        <div id="dashSecondTurnsList"></div>
+      </div>
+
+      <!-- Prenotazioni in ritardo -->
+      <div class="late-alert hidden" id="dashLateAlert"></div>
+
+      <!-- Doppie assegnazioni sullo stesso tavolo -->
+      <div class="late-alert hidden" id="dashConflictAlert"></div>
+
+      <!-- Promemoria squadra -->
+      <div class="reminders-card">
+        <h3>📌 Promemoria</h3>
+        <div class="reminder-add-row">
+          <input type="text" class="text-input" id="reminderInput" placeholder="Scrivi qualcosa per la squadra…" autocomplete="off">
+          <button id="reminderAddBtn">Aggiungi</button>
+        </div>
+        <select class="text-input" id="reminderRecipient" style="margin-top:8px">
+          <option value="">Per tutti</option>
+        </select>
+        <div id="remindersList"></div>
+      </div>
+
+      <!-- Tavoli disponibili -->
+      <div class="available-tables-card" id="availableTablesBox"></div>
+
     </div>
     <button class="fab-new-booking hidden" id="fabNewBooking">＋ Nuova prenotazione</button>
+  </section>
+
+  <!-- ===================== DETTAGLIO EVENTO (staff) ===================== -->
+  <section class="screen" id="screen-evento-detail">
+    <div class="topbar">
+      <button class="icon-btn" id="eventoDetailBack" aria-label="Indietro">←</button>
+      <h1>🎉 Evento</h1>
+    </div>
+    <div class="evento-detail-content" id="eventoDetailContent"></div>
+    <div class="form-footer">
+      <button class="save-btn" id="eventoDetailEditBtn">✏️ Modifica prenotazione</button>
+    </div>
   </section>
 
   <!-- ===================== LISTA ===================== -->
   <section class="screen" id="screen-list">
     <div class="topbar">
       <h1>Prenotazioni</h1>
+      <button class="today-btn hidden" id="listTodayBtn" title="Torna a oggi">📅 Oggi</button>
+      <span class="jump-date-icon" aria-hidden="true">📅</span>
+      <input type="date" class="jump-date-input" id="listJumpDate" title="Vai a una data">
       <button class="icon-btn" id="openPreviewBtn">🖼️</button>
     </div>
     <div class="dashboard-content" style="padding-bottom:0">
@@ -92,7 +214,12 @@
         </div>
       </div>
     </div>
-    <div class="list-content" id="listContent"></div>
+    <div class="late-alert hidden" id="listConflictAlert" style="margin:0 16px 8px;"></div>
+    <div class="available-tables-card" id="listAvailableTablesBox" style="margin:0 16px 8px;"></div>
+    <div class="list-tablet-layout" id="listTabletLayout">
+      <div class="piantina-card" id="listPiantinaBox"></div>
+      <div class="list-content" id="listContent"></div>
+    </div>
     <button class="fab-new-booking hidden" id="fabNewBookingList">＋ Nuova prenotazione</button>
   </section>
 
@@ -139,47 +266,322 @@
   <section class="screen" id="screen-config">
     <div class="topbar"><h1>Impostazioni</h1></div>
     <div class="config-content">
-      <div class="config-section">
-        <h3>Tavoli</h3>
-        <div class="config-row"><label>Tavoli interni</label><input type="number" min="0" class="config-number-input" id="cfgTablesIndoor"></div>
-        <div class="config-row"><label>Tavoli esterni</label><input type="number" min="0" class="config-number-input" id="cfgTablesOutdoor"></div>
+
+      <!-- Sezione riservata: chi non è admin pieno (o non ha ancora
+           sbloccato con PIN) vede questa invece delle sezioni vere.
+           Sparisce da sola una volta sbloccata, senza ricaricare la pagina. -->
+      <div class="config-section admin-locked-card hidden" id="cfgAdminLockedCard">
+        <div class="admin-locked-icon">🔒</div>
+        <h3>Sezione riservata</h3>
+        <p style="font-size:13px;color:var(--color-ink-soft);margin-bottom:14px">
+          Zone e tavoli, editor piantina, PIN dipendenti e Statistiche sono visibili solo a Luca e Davy — o a chi sblocca temporaneamente con il loro PIN.
+        </p>
+        <button class="save-btn" id="cfgAdminUnlockBtn" type="button">🔓 Sblocca con PIN</button>
       </div>
-      <div class="config-section">
-        <h3>Orari</h3>
-        <div class="config-row"><label>Pranzo dalle</label><input type="time" class="config-time-input" id="cfgLunchStart"></div>
-        <div class="config-row"><label>Pranzo alle</label><input type="time" class="config-time-input" id="cfgLunchEnd"></div>
-        <div class="config-row"><label>Cena dalle</label><input type="time" class="config-time-input" id="cfgDinnerStart"></div>
-        <div class="config-row"><label>Cena alle</label><input type="time" class="config-time-input" id="cfgDinnerEnd"></div>
-      </div>
-      <div class="config-section">
-        <h3>Slot e limiti</h3>
-        <div class="config-row"><label>Durata slot (min)</label><input type="number" min="5" step="5" class="config-number-input" id="cfgSlotDuration"></div>
-        <div class="config-row"><label>Max prenotazioni per slot</label><input type="number" min="1" class="config-number-input" id="cfgMaxPerSlot"></div>
-      </div>
-      <div class="config-section">
-        <h3>Doppio turno (cena)</h3>
-        <div class="day-toggles" id="cfgDoubleShiftDays">
-          <button class="day-toggle" data-day="1">L</button>
-          <button class="day-toggle" data-day="2">M</button>
-          <button class="day-toggle" data-day="3">M</button>
-          <button class="day-toggle" data-day="4">G</button>
-          <button class="day-toggle" data-day="5">V</button>
-          <button class="day-toggle" data-day="6">S</button>
-          <button class="day-toggle" data-day="0">D</button>
+
+      <!-- ===== CATEGORIA: Sala e Prenotazioni ===== -->
+      <details class="settings-category" open>
+        <summary>🍽️ Sala e Prenotazioni</summary>
+        <div class="settings-category-body">
+
+          <div id="cfgFullAdminSection">
+          <div class="config-section">
+            <h3>Tavoli</h3>
+            <div class="config-row"><label>Tavoli interni</label><input type="number" min="0" class="config-number-input" id="cfgTablesIndoor"></div>
+            <div class="config-row"><label>Tavoli esterni</label><input type="number" min="0" class="config-number-input" id="cfgTablesOutdoor"></div>
+          </div>
+          <div class="config-section">
+            <h3>Orari</h3>
+            <div class="config-row"><label>Pranzo dalle</label><input type="time" class="config-time-input" id="cfgLunchStart"></div>
+            <div class="config-row"><label>Pranzo alle</label><input type="time" class="config-time-input" id="cfgLunchEnd"></div>
+            <div class="config-row"><label>Cena dalle</label><input type="time" class="config-time-input" id="cfgDinnerStart"></div>
+            <div class="config-row"><label>Cena alle</label><input type="time" class="config-time-input" id="cfgDinnerEnd"></div>
+          </div>
+          <div class="config-section">
+            <h3>Slot e limiti</h3>
+            <div class="config-row"><label>Durata slot (min)</label><input type="number" min="5" step="5" class="config-number-input" id="cfgSlotDuration"></div>
+            <div class="config-row"><label>Max prenotazioni per slot</label><input type="number" min="1" class="config-number-input" id="cfgMaxPerSlot"></div>
+          </div>
+          </div>
+
+          <!-- Gestione zone + tavoli condivisa (solo admin) -->
+          <div class="config-section" id="cfgZoneTavoliSection">
+            <h3>Zone e tavoli (condivisi)</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Aggiungi le zone del tuo ristorante e i tavoli in ciascuna. Le modifiche si vedono su tutti i dispositivi.
+            </p>
+
+            <div id="cfgZoneTavoliList">
+              <!-- popolato via JS -->
+            </div>
+
+            <button class="zone-add-btn" id="cfgAddZoneBtn" type="button">
+              ＋ Aggiungi zona
+            </button>
+
+            <button class="save-btn" id="cfgZoneTavoliSaveBtn" style="height:48px;font-size:15px;margin-top:12px">
+              Salva tutto
+            </button>
+            <div class="config-save-confirm" id="cfgZoneTavoliConfirm">✓ Zone e tavoli aggiornati</div>
+          </div>
+
+          <!-- Editor piantina (solo desktop, admin) -->
+          <div class="config-section piantina-editor-section" id="cfgPiantinaSection" style="display:none">
+            <h3>Piantina sala</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Trascina i tavoli per posizionarli. La disposizione si vede su tutti i dispositivi.
+            </p>
+            <div class="piantina-card" id="cfgPiantinaBox"></div>
+          </div>
+
+          <!-- Chiusure — visibile e modificabile da chi può modificare (admin/staff) -->
+          <div class="config-section admin-only" id="cfgClosuresSection" style="display:none">
+            <h3>🚫 Giorni e periodi di chiusura</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Un giorno, un periodo o un solo servizio in cui non si accettano prenotazioni — diverso da "pieno", qui è "non siamo aperti". Chi prova a prenotare in quel periodo viene bloccato, con lo stesso avviso mostrato anche allo chef.
+            </p>
+            <div id="cfgClosuresList"></div>
+            <div class="closure-form">
+              <div style="display:flex;gap:8px">
+                <input type="date" class="text-input" id="cfgClosureStart" placeholder="Da">
+                <input type="date" class="text-input" id="cfgClosureEnd" placeholder="A (facoltativo)">
+              </div>
+              <div class="service-toggle" id="cfgClosureServiceOptions" style="margin-top:8px">
+                <button type="button" class="service-btn active" data-service="all">Tutto il giorno</button>
+                <button type="button" class="service-btn" data-service="lunch">Solo pranzo</button>
+                <button type="button" class="service-btn" data-service="dinner">Solo cena</button>
+              </div>
+              <input type="text" class="text-input" id="cfgClosureReason" placeholder="Motivo (facoltativo, es. Ferie, Natale…)" style="margin-top:8px" autocomplete="off">
+              <button class="zone-add-btn" id="cfgAddClosureBtn" type="button" style="margin-top:8px">＋ Aggiungi chiusura</button>
+            </div>
+          </div>
+
+          <!-- Chiusure per singola zona — stessa idea di sopra, ma per una
+               zona precisa: utile per i periodi di stagione in cui es. il
+               giardino apre solo a pranzo o solo a cena -->
+          <div class="config-section admin-only" id="cfgZoneClosuresSection" style="display:none">
+            <h3>🌿 Apertura zone per servizio</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Per i periodi in cui una zona è aperta solo a pranzo o solo a cena (o chiusa del tutto per un periodo) — le altre zone restano prenotabili normalmente.
+            </p>
+            <div id="cfgZoneClosuresList"></div>
+            <div class="closure-form">
+              <select class="text-input" id="cfgZoneClosureZone" style="margin-bottom:8px"></select>
+              <div style="display:flex;gap:8px">
+                <input type="date" class="text-input" id="cfgZoneClosureStart" placeholder="Da">
+                <input type="date" class="text-input" id="cfgZoneClosureEnd" placeholder="A (facoltativo)">
+              </div>
+              <div class="service-toggle" id="cfgZoneClosureServiceOptions" style="margin-top:8px">
+                <button type="button" class="service-btn active" data-service="all">Tutto il giorno</button>
+                <button type="button" class="service-btn" data-service="lunch">Solo pranzo</button>
+                <button type="button" class="service-btn" data-service="dinner">Solo cena</button>
+              </div>
+              <input type="text" class="text-input" id="cfgZoneClosureReason" placeholder="Motivo (facoltativo, es. Bassa stagione)" style="margin-top:8px" autocomplete="off">
+              <button class="zone-add-btn" id="cfgAddZoneClosureBtn" type="button" style="margin-top:8px">＋ Aggiungi chiusura di zona</button>
+            </div>
+          </div>
+
+          <!-- Vini al calice: tolti (novembre 2026), la carta vini è gestita da Cantina360 -->
+
         </div>
-        <div class="config-row" style="margin-top:12px"><label>Durata occupazione (min)</label><input type="number" min="15" step="5" class="config-number-input" id="cfgDoubleShiftDuration"></div>
-      </div>
-      <div class="config-section">
-        <h3>Account</h3>
-        <div class="config-row">
-          <label>Ruolo attivo</label>
-          <span id="cfgRole" style="font-weight:700;color:var(--color-primary)"></span>
+      </details>
+
+      <!-- ===== CATEGORIA: Squadra e Accessi ===== -->
+      <details class="settings-category">
+        <summary>👥 Squadra e Accessi</summary>
+        <div class="settings-category-body">
+
+          <div class="config-section">
+            <h3>Account</h3>
+            <div class="config-row">
+              <label>Ruolo attivo</label>
+              <span id="cfgRole" style="font-weight:700;color:var(--color-primary)"></span>
+            </div>
+            <div class="config-row hidden" id="cfgOperatorRow">
+              <label>Operatore attuale</label>
+              <span id="cfgOperatorName" style="font-weight:700"></span>
+            </div>
+            <button class="save-btn hidden" id="cfgSwitchOperatorBtn" style="background:var(--color-surface-alt);color:var(--color-ink);height:44px;font-size:14px;margin-top:8px">
+              🔄 Cambia operatore
+            </button>
+            <div class="config-row hidden" id="cfgDeviceRow">
+              <label>Dispositivo</label>
+              <span id="cfgDeviceName" style="font-weight:700"></span>
+            </div>
+            <button class="save-btn hidden" id="cfgEditDeviceBtn" style="background:var(--color-surface-alt);color:var(--color-ink);height:44px;font-size:14px;margin-top:8px">
+              📱 Modifica nome dispositivo
+            </button>
+            <button class="save-btn" id="logoutBtn" style="background:var(--color-surface-alt);color:var(--color-ink);height:48px;font-size:14px;margin-top:8px">
+              Esci (cambia account)
+            </button>
+          </div>
+
+          <!-- Nomi staff per il tablet condiviso (solo admin) -->
+          <div class="config-section" id="cfgStaffNamesSection" style="display:none">
+            <h3>Nomi staff (tablet condiviso)</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Elenco di nomi tra cui scegliere quando si usa l'accesso Staff condiviso (es. il tablet d'ingresso).
+            </p>
+            <div id="cfgStaffNamesList"></div>
+            <button class="zone-add-btn" id="cfgAddStaffNameBtn" type="button">＋ Aggiungi nome</button>
+          </div>
+
+          <!-- PIN amministratore — solo Luca/Davy, danno accesso admin pieno -->
+          <div class="config-section fulladmin-only" id="cfgAdminPinsSection" style="display:none">
+            <h3>👑 Il tuo PIN (accesso admin pieno)</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Il tuo PIN o password vero e proprio. È salvato cifrato sul server: qui non si può rileggere, solo sostituire scrivendone uno nuovo. Funziona sia per accedere normalmente sia per sbloccare le sezioni riservate da un altro dispositivo. Cambiandolo, quello precedente smette di funzionare.
+            </p>
+            <div id="cfgAdminPinsList"></div>
+            <button class="zone-add-btn" id="cfgAddAdminPinBtn" type="button">＋ Aggiungi PIN amministratore</button>
+          </div>
+
+          <!-- Sicurezza accessi — reset totale e codice tablet, solo Luca/Davy -->
+          <div class="config-section fulladmin-only" id="cfgSecuritySection" style="display:none">
+            <h3>🚨 Sicurezza accessi</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Disconnette ISTANTANEAMENTE chiunque sia collegato in questo momento, qualunque profilo stia usando — anche uno ormai eliminato. Tutti dovranno rifare il login da zero, te compreso.
+            </p>
+            <button class="btn-danger" id="cfgKickEveryoneBtn" type="button" style="width:100%">🚨 Disconnetti tutti adesso</button>
+            <label class="field-label" style="margin-top:16px;display:block">Codice di sblocco modifiche per il tablet d'ingresso</label>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin:4px 0">
+              Proposte del giorno, menu operai e mezza pensione sono in sola lettura per chi non ha un profilo admin o chef. Con questo codice, il tablet condiviso in sala può sbloccarli temporaneamente.
+            </p>
+            <input type="text" class="text-input" id="cfgTabletEditCodeInput" placeholder="Non ancora impostato" autocomplete="off" style="margin-top:4px">
+          </div>
+
+          <!-- PIN dipendenti — visibile e modificabile SOLO da Luca/Davy -->
+          <div class="config-section fulladmin-only" id="cfgEmployeePinsSection" style="display:none">
+            <h3>🔑 PIN dipendenti</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Un PIN o password personale per ogni dipendente — chi entra col proprio viene riconosciuto subito, senza dover scegliere "chi sei". Puoi cambiarlo in ogni momento (anche quelli storici, es. Andrea/Ivan) — visibile e modificabile solo da qui.
+            </p>
+            <div id="cfgEmployeePinsList"></div>
+            <button class="zone-add-btn" id="cfgAddEmployeePinBtn" type="button">＋ Aggiungi dipendente</button>
+          </div>
+
+          <!-- PIN cuochi — un profilo per cuoco (nome + PIN), come i
+               dipendenti sopra: non c'è più una password condivisa dello
+               chef, ognuno entra col proprio — visibile e modificabile
+               SOLO da Luca/Davy -->
+          <div class="config-section fulladmin-only" id="cfgChefPinsSection" style="display:none">
+            <h3>🍳 PIN cuochi</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Un profilo per ogni cuoco — nome e PIN personale, sola lettura più gestione dei menu del giorno. Niente più password unica condivisa: senza un profilo qui, un cuoco non può entrare.
+            </p>
+            <div id="cfgChefPinsList"></div>
+            <button class="zone-add-btn" id="cfgAddChefPinBtn" type="button">＋ Aggiungi cuoco</button>
+          </div>
+
+          <!-- Password condivisa tablet d'ingresso — visibile e modificabile SOLO da Luca/Davy -->
+          <div class="config-section fulladmin-only" id="cfgSharedPasswordSection" style="display:none">
+            <h3>📱 Password condivisa (tablet d'ingresso)</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Usata da chiunque acceda dal tablet condiviso in sala, chi entra sceglie poi "chi sei". A differenza dei PIN personali sopra, questa non identifica una persona precisa — cambiala se qualcuno che la conosceva non lavora più con voi.
+            </p>
+            <input type="text" class="text-input" id="cfgSharedPasswordInput" placeholder="Nuova password condivisa" autocomplete="off">
+            <button class="zone-add-btn" id="cfgSaveSharedPasswordBtn" type="button" style="margin-top:8px">Salva nuova password</button>
+          </div>
+
         </div>
-        <button class="save-btn" id="logoutBtn" style="background:var(--color-surface-alt);color:var(--color-ink);height:48px;font-size:14px;margin-top:8px">
-          Esci (cambia account)
-        </button>
-      </div>
+      </details>
+
+      <!-- ===== CATEGORIA: Notifiche ===== -->
+      <details class="settings-category">
+        <summary>🔔 Notifiche</summary>
+        <div class="settings-category-body">
+
+          <!-- Notifiche push — visibile a chi può modificare (admin/staff) -->
+          <div class="config-section admin-only" id="cfgPushSection" style="display:none">
+            <h3>🔔 Notifiche push</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px" id="cfgPushDesc">
+              Attivale su questo dispositivo per ricevere un avviso anche ad app chiusa — es. una prenotazione con una preparazione speciale, o una decisione dello chef su un piatto del giorno.
+            </p>
+            <button class="zone-add-btn" id="cfgPushToggleBtn" type="button">🔔 Attiva notifiche su questo dispositivo</button>
+          </div>
+
+        </div>
+      </details>
+
+      <!-- ===== CATEGORIA: Dati ===== -->
+      <details class="settings-category">
+        <summary>📊 Dati</summary>
+        <div class="settings-category-body">
+
+          <!-- Statistiche (solo admin) -->
+          <div class="config-section" id="cfgStatsSection" style="display:none">
+            <h3>Statistiche</h3>
+            <p style="font-size:12px;color:var(--color-ink-soft);margin-bottom:12px">
+              Coperti, no-show, orari di punta, clienti abituali e altro.
+            </p>
+            <button class="save-btn" id="cfgOpenStatsBtn" style="height:48px;font-size:15px">
+              📊 Apri statistiche
+            </button>
+          </div>
+
+        </div>
+      </details>
+
       <div class="config-save-confirm" id="cfgSaveConfirm">✓ Salvato</div>
+
+    </div>
+  </section>
+
+  <!-- ===================== RESOCONTO SERVIZIO ===================== -->
+  <!-- Raggiunta col tocco sulla notifica di fine servizio (o dal tasto
+       cucina libera) — stessi numeri già mandati nella notifica, calcolati
+       qui allo stesso modo per restare coerenti -->
+  <section class="screen" id="screen-service-report">
+    <div class="topbar">
+      <button class="icon-btn" id="serviceReportBackBtn">←</button>
+      <h1>📊 Resoconto servizio</h1>
+    </div>
+    <div class="config-content">
+      <div class="config-section">
+        <h3 id="serviceReportTitle">—</h3>
+        <div class="service-report-numbers">
+          <div class="service-report-stat">
+            <span class="service-report-value" id="serviceReportPeople">0</span>
+            <span class="service-report-label">coperti</span>
+          </div>
+          <div class="service-report-stat">
+            <span class="service-report-value" id="serviceReportTables">0</span>
+            <span class="service-report-label">tavoli</span>
+          </div>
+          <div class="service-report-stat">
+            <span class="service-report-value" id="serviceReportWalkins">0</span>
+            <span class="service-report-label">walk-in</span>
+          </div>
+        </div>
+      </div>
+      <div class="config-section">
+        <h3>Prenotazioni del servizio</h3>
+        <div id="serviceReportList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STATISTICHE ===================== -->
+  <section class="screen" id="screen-stats">
+    <div class="topbar">
+      <button class="icon-btn" id="statsBackBtn">←</button>
+      <h1>Statistiche</h1>
+    </div>
+    <div class="config-content">
+      <div class="config-section">
+        <div class="stats-range-tabs" id="statsRangeTabs">
+          <button data-range="today">Oggi</button>
+          <button data-range="week">7 giorni</button>
+          <button data-range="month">30 giorni</button>
+          <button data-range="custom">Personalizzato</button>
+        </div>
+        <div class="stats-custom-range hidden" id="statsCustomRange">
+          <input type="date" class="text-input" id="statsFromDate">
+          <span>–</span>
+          <input type="date" class="text-input" id="statsToDate">
+        </div>
+      </div>
+      <div id="statsContent"></div>
     </div>
   </section>
 
@@ -194,25 +596,97 @@
         <label class="field-label">Nome</label>
         <input type="text" class="text-input" id="fName" placeholder="Nome cliente" autocomplete="off">
       </div>
+
+      <!-- Cliente dell'hotel — struttura gemella a pochi metri, capita
+           spesso che le mezze pensioni vengano a mangiare qui -->
+      <div class="field-group">
+        <label class="hotel-guest-toggle">
+          <input type="checkbox" id="fIsHotelGuest">
+          <span>🏨 Cliente dell'hotel</span>
+        </label>
+        <div class="hotel-guest-fields hidden" id="hotelGuestFields">
+          <input type="text" class="text-input" id="fRoomNumber" placeholder="Numero camera" autocomplete="off" style="margin-top:8px">
+          <div class="service-toggle" id="fMealPlanToggle" style="margin-top:8px">
+            <button type="button" data-plan="mezza_pensione" class="active">Mezza pensione</button>
+            <button type="button" data-plan="carta">Alla carta</button>
+          </div>
+          <label class="field-label" style="margin-top:8px;display:block">Data di partenza</label>
+          <input type="date" class="text-input" id="fDepartureDate" style="margin-top:4px">
+          <p id="hotelVisitHint" class="hotel-visit-hint hidden"></p>
+        </div>
+      </div>
+
       <div class="field-group">
         <label class="field-label">Numero di persone</label>
-        <div class="people-stepper">
-          <button class="stepper-btn" id="peopleMinus">−</button>
-          <span class="stepper-value" id="peopleValue">2</span>
-          <button class="stepper-btn" id="peoplePlus">+</button>
+        <div class="people-and-highchairs-row">
+          <div class="people-stepper">
+            <button class="stepper-btn" id="peopleMinus">−</button>
+            <span class="stepper-value" id="peopleValue">2</span>
+            <button class="stepper-btn" id="peoplePlus">+</button>
+          </div>
+          <div class="highchairs-inline">
+            <span class="highchairs-inline-label">Segg.</span>
+            <div class="dogs-stepper">
+              <button class="stepper-btn" id="highchairsMinus">−</button>
+              <span class="stepper-value" id="highchairsValue">0</span>
+              <button class="stepper-btn" id="highchairsPlus">+</button>
+            </div>
+          </div>
+          <div class="highchairs-inline">
+            <span class="highchairs-inline-label">Cani</span>
+            <div class="dogs-stepper">
+              <button class="stepper-btn" id="dogsMinus">−</button>
+              <span class="stepper-value" id="dogsValue">0</span>
+              <button class="stepper-btn" id="dogsPlus">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="notes-dest-group">
+        <div class="notes-dest-hint">Le note qui sotto vanno a destinazioni diverse — segnate chiaramente, per evitare che una nota per la sala finisca (o non finisca) dove serve.</div>
+        <div class="field-quick-row">
+          <div class="field-quick-item">
+            <button type="button" class="field-quick-add-btn field-quick-add-kitchen" id="fIntolerancesChip">🍳 ＋ Allergia</button>
+            <div class="field-group hidden" id="fIntolerancesWrap">
+              <label class="field-label">🍳 Allergie / intolleranze — per la cucina</label>
+              <textarea class="text-input" id="fIntolerances" placeholder="Es. glutine, lattosio…" rows="1"></textarea>
+            </div>
+          </div>
+          <div class="field-quick-item">
+            <button type="button" class="field-quick-add-btn field-quick-add-kitchen" id="fSpecialNeedsChip">🍳 ＋ Cucina</button>
+            <div class="field-group hidden" id="fSpecialNeedsWrap">
+              <label class="field-label">🍳 Esigenze particolari — per la cucina</label>
+              <textarea class="text-input" id="fSpecialNeeds" placeholder="Es. seggiolone, carrozzina…" rows="1"></textarea>
+            </div>
+          </div>
+          <div class="field-quick-item">
+            <button type="button" class="field-quick-add-btn" id="fNotesChip">🛎️ ＋ Sala</button>
+            <div class="field-group hidden" id="fNotesWrap">
+              <label class="field-label">🛎️ Note — per la sala</label>
+              <textarea class="text-input" id="fNotes" placeholder="Note libere, visibili solo in sala…" rows="1"></textarea>
+            </div>
+          </div>
         </div>
       </div>
       <div class="field-group">
         <label class="field-label">Data</label>
         <input type="date" class="text-input" id="fDate">
+        <div class="fdate-quick-picks">
+          <button type="button" class="fdate-quick-btn" id="fDateQuickToday">Oggi</button>
+          <button type="button" class="fdate-quick-btn" id="fDateQuickTomorrow">Domani</button>
+        </div>
+        <p class="fdate-weekday" id="fDateWeekday"></p>
       </div>
       <div class="field-group">
         <label class="field-label">Servizio</label>
-        <div class="service-options" id="formServiceOptions">
+        <div class="service-toggle" id="formServiceOptions">
           <button class="service-btn" data-service="lunch">Pranzo</button>
           <button class="service-btn" data-service="dinner">Cena</button>
         </div>
       </div>
+      <div class="form-closure-alert hidden" id="formClosureAlert"></div>
+      <div class="form-tables-hint" id="formTablesHint"></div>
+
       <div class="field-group">
         <label class="field-label">Orario</label>
         <div class="slot-grid" id="formSlotGrid"></div>
@@ -222,53 +696,139 @@
         <span id="suggestionText"></span>
         <div class="suggestion-chips" id="suggestionChips"></div>
       </div>
-      <div class="double-shift-alert hidden" id="doubleShiftAlert">
-        <span class="alert-icon">⏱️</span>
-        <span id="doubleShiftText"></span>
-      </div>
       <div class="field-group">
-        <label class="field-label">Zona richiesta</label>
+        <label class="field-label">Preferenza posto</label>
         <div class="zone-options" id="formZoneOptions">
-          <button class="zone-btn" data-zone="indoor"><span class="zone-icon">🏠</span>Interno</button>
-          <button class="zone-btn" data-zone="outdoor"><span class="zone-icon">🌿</span>Esterno</button>
-          <button class="zone-btn" data-zone="any"><span class="zone-icon">↔️</span>Indifferente</button>
+          <button class="zone-btn" data-zone="indoor">🏠 Interno</button>
+          <button class="zone-btn" data-zone="outdoor">🌿 Esterno</button>
+          <button class="zone-btn" data-zone="any">↔️ Indifferente</button>
         </div>
       </div>
       <div class="field-group">
-        <label class="field-label">Telefono</label>
-        <input type="tel" class="text-input" id="fPhone" placeholder="Numero di telefono" inputmode="tel" autocomplete="off">
+        <label class="evento-checkbox-label">
+          <input type="checkbox" id="fIsWaitlist">
+          <span>🕐 Lista d'attesa — "veniamo solo se si libera un tavolo"</span>
+        </label>
+        <p style="font-size:14px;color:var(--color-ink-soft);margin-top:4px" id="waitlistHint">
+          Nessun tavolo da scegliere ora, ma il numero di telefono diventa obbligatorio — è l'unico modo per poterli richiamare.
+        </p>
+      </div>
+      <div class="field-group">
+        <label class="evento-checkbox-label">
+          <input type="checkbox" id="fIsTakeaway">
+          <span>🥡 Asporto — nessun tavolo, solo da ritirare</span>
+        </label>
+        <p style="font-size:14px;color:var(--color-ink-soft);margin-top:4px" id="takeawayHint">
+          Nessun tavolo da scegliere — scrivi cosa portare via, lo chef lo vede in cucina con l'orario di ritiro.
+        </p>
+        <div class="hidden" id="takeawayFields">
+          <label class="field-label" style="margin-top:8px;display:block">Cosa portare via</label>
+          <textarea class="text-input" id="fTakeawayItems" rows="3" placeholder="Es. 2 tagliatelle al ragù, 1 tagliere di salumi" style="margin-top:4px"></textarea>
+        </div>
+      </div>
+      <div class="field-group" id="formTableFieldGroup">
+        <label class="field-label">Tavolo</label>
+        <div class="form-table-picker" id="formTablePicker">
+          <!-- popolato via JS con i tavoli disponibili -->
+        </div>
+        <div id="formTableSelected" class="form-table-selected hidden">
+          Tavolo selezionato: <strong id="formTableSelectedLabel"></strong>
+          <button id="formTableClear" type="button">✕</button>
+        </div>
+        <div id="formCapacityWarning"></div>
+      </div>
+      <div class="field-group">
+        <label class="evento-checkbox-label">
+          <input type="checkbox" id="fIsFixedTable">
+          <span>🔒 Non spostare questo tavolo al cliente</span>
+        </label>
+        <p style="font-size:14px;color:var(--color-ink-soft);margin-top:4px">
+          Utile per un tavolo storico, o preparato apposta per l'occasione — si vede sia in piantina che nella lista.
+        </p>
+      </div>
+      <div class="field-group">
+        <label class="evento-checkbox-label">
+          <input type="checkbox" id="fIsWorkerMenu">
+          <span>👷 Menu operaio</span>
+        </label>
+        <p style="font-size:14px;color:var(--color-ink-soft);margin-top:4px" id="workerMenuHint">
+          Segnala alla cucina che questo tavolo ha il menu operaio.
+        </p>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" id="fPhoneLabel">Telefono</label>
+        <div class="phone-input-row">
+          <select id="fPhonePrefix" class="text-input phone-prefix-select">
+            <option value="+39" selected>+39 · Italia</option>
+            <option value="+41">+41 · Svizzera</option>
+            <option value="+33">+33 · Francia</option>
+            <option value="+49">+49 · Germania</option>
+            <option value="+43">+43 · Austria</option>
+            <option value="+44">+44 · Regno Unito</option>
+            <option value="+1">+1 · USA/Canada</option>
+            <option value="+34">+34 · Spagna</option>
+            <option value="+32">+32 · Belgio</option>
+            <option value="+31">+31 · Paesi Bassi</option>
+            <option value="">Altro (scrivi tutto)</option>
+          </select>
+          <input type="tel" class="text-input" id="fPhone" placeholder="Numero di telefono" inputmode="tel" autocomplete="off">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">👤 Cliente</label>
+        <div id="customerLinkBox">
+          <!-- popolato via JS: campo di ricerca, oppure scheda cliente collegato -->
+        </div>
       </div>
       <div class="optional-toggle" id="optionalToggle">
-        <span>Cani, intolleranze, note…</span>
+        <span>Evento, pagamento…</span>
         <span class="chevron">⌄</span>
       </div>
       <div class="optional-fields" id="optionalFields">
         <div class="field-group">
-          <label class="field-label">Cani</label>
-          <div class="dogs-stepper">
-            <button class="stepper-btn" id="dogsMinus">−</button>
-            <span class="stepper-value" id="dogsValue">0</span>
-            <button class="stepper-btn" id="dogsPlus">+</button>
+          <label class="evento-checkbox-label">
+            <input type="checkbox" id="fIsEvento">
+            <span>🎉 Questa prenotazione è un evento da organizzare</span>
+          </label>
+        </div>
+        <div class="evento-details-fields hidden" id="eventoDetailsFields">
+          <div class="field-group">
+            <label class="field-label">Menu</label>
+            <textarea class="text-input" id="fEventoMenu" placeholder="Es. Menu degustazione 5 portate, antipasto tipico valdostano…"></textarea>
           </div>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Intolleranze</label>
-          <textarea class="text-input" id="fIntolerances" placeholder="Es. glutine, lattosio…"></textarea>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Esigenze particolari</label>
-          <textarea class="text-input" id="fSpecialNeeds" placeholder="Es. seggiolone, carrozzina…"></textarea>
-        </div>
-        <div class="field-group">
-          <label class="field-label">Note</label>
-          <textarea class="text-input" id="fNotes" placeholder="Note libere…"></textarea>
+          <div class="field-group">
+            <label class="field-label">Vino</label>
+            <textarea class="text-input" id="fEventoVino" placeholder="Es. Petite Arvine per l'antipasto, Torrette per i secondi…"></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Richieste speciali</label>
+            <textarea class="text-input" id="fEventoRichieste" placeholder="Es. torta di compleanno da portare a fine cena, decorazione tavolo, musica…"></textarea>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Costo al cliente</label>
+            <input type="text" class="text-input" id="fEventoCosto" placeholder="Es. 75€ a persona, totale 900€" autocomplete="off">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Pagamento</label>
+            <select class="text-input" id="fEventoPagamento">
+              <option value="">Non specificato</option>
+              <option value="fine_cena">Paga a fine cena</option>
+              <option value="acconto_richiesto">Acconto richiesto, non ancora pagato</option>
+              <option value="acconto_pagato">Acconto pagato</option>
+              <option value="saldato">Pagamento completo già ricevuto</option>
+            </select>
+          </div>
+          <p style="font-size:14px;color:var(--color-ink-soft)">
+            Coperti e allergie si prendono dai campi qui sopra (Persone, Intolleranze) — non serve ripeterli qui.
+          </p>
         </div>
       </div>
       <div class="field-group hidden" id="statusFieldGroup">
         <label class="field-label">Stato</label>
         <div class="status-options" id="formStatusOptions"></div>
       </div>
-      <a href="#" class="delete-link hidden" id="deleteLink">Cancella prenotazione</a>
+      <a href="#" class="delete-link hidden" id="deleteLink">Archivia prenotazione</a>
       <div style="height:100px"></div>
     </div>
     <div class="form-footer">
@@ -280,68 +840,549 @@
   <section class="screen" id="screen-readonly">
     <div class="topbar">
       <h1>Lou Tchappé</h1>
+      <button class="icon-btn events-badge-btn hidden" id="roEventsBadgeBtn" aria-label="Eventi in arrivo">
+        🎉 Eventi<span class="events-badge-count" id="roEventsBadgeCount">0</span>
+      </button>
+      <button class="icon-btn events-badge-btn hidden" id="roTakeawayBadgeBtn" aria-label="Asporti da preparare">
+        🥡 Asporti<span class="events-badge-count" id="roTakeawayBadgeCount">0</span>
+      </button>
+      <button class="icon-btn events-badge-btn" id="roOdsBtn" aria-label="Ordini di servizio">📋 ODS<span class="events-badge-count hidden" id="roOdsBadge"></span></button>
+      <button class="icon-btn" id="roPushToggleBtn" aria-label="Notifiche">🔔</button>
+      <button class="icon-btn hidden" id="roManageAccessBtn" aria-label="Gestisci accessi">🔐</button>
+      <button class="icon-btn" id="roRefreshBtn" aria-label="Aggiorna">🔄</button>
+      <button class="icon-btn" id="roLogoutBtn" aria-label="Esci">🚪</button>
     </div>
-    <div class="dashboard-content" style="padding-bottom:0">
+
+    <!-- Popover eventi, si apre toccando il badge nel topbar -->
+    <div class="events-popover hidden" id="roEventsPopover">
+      <div class="events-popover-header">
+        <strong>🎉 Eventi in arrivo</strong>
+        <button id="roEventsPopoverClose">✕</button>
+      </div>
+      <div id="roEventsPopoverList"></div>
+    </div>
+
+    <!-- Popover asporti, stessa idea del pannello eventi — una finestra a
+         sé, separata del tutto dalla lista tavoli, in stile preparazione -->
+    <div class="events-popover takeaway-popover hidden" id="roTakeawayPopover">
+      <div class="events-popover-header">
+        <strong>🥡 Asporti da preparare</strong>
+        <button id="roTakeawayPopoverClose">✕</button>
+      </div>
+      <div id="roTakeawayPopoverList"></div>
+    </div>
+
+    <div class="dashboard-content">
+
       <div class="date-service-card">
         <div class="date-row">
           <button class="date-nav-btn" id="roPrevDay">‹</button>
           <span class="date-label" id="roDateLabel">Oggi</span>
           <button class="date-nav-btn" id="roNextDay">›</button>
         </div>
+        <div class="service-toggle">
+          <button data-service="lunch" id="roBtnLunch">Pranzo</button>
+          <button data-service="dinner" id="roBtnDinner">Cena</button>
+        </div>
       </div>
+
+      <!-- Chiusura — ben visibile appena si guarda un giorno/servizio chiuso -->
+      <div class="ro-closure-badge hidden" id="roClosureBox"></div>
+
+      <!-- Preparazioni speciali — banner fisso, non richiudibile: lo chef
+           lo deve vedere ogni volta che apre la giornata, non solo la
+           prima -->
+      <div class="chef-prep-box hidden" id="roSpecialPrepBox"></div>
+
+      <!-- Coperti di tutta la giornata, pranzo e cena insieme — non solo
+           il servizio selezionato, cosi lo chef vede subito tutta la giornata -->
+      <div class="chef-covers-strip">
+        <div class="chef-covers-item">
+          <span class="chef-covers-icon">🍽️</span>
+          <span class="chef-covers-label">Pranzo</span>
+          <span class="chef-covers-value" id="roCoversLunch">0</span>
+        </div>
+        <div class="chef-covers-item">
+          <span class="chef-covers-icon">🌙</span>
+          <span class="chef-covers-label">Cena</span>
+          <span class="chef-covers-value" id="roCoversDinner">0</span>
+        </div>
+      </div>
+
+      <!-- Mezze pensioni del servizio selezionato — struttura gemella
+           dell'hotel a pochi metri, capita spesso che vengano a mangiare -->
+      <div class="chef-halfboard-badge hidden" id="roHalfBoardBadge"></div>
+
+      <!-- Tavoli con doppio turno confermato: hanno un tempo preciso entro
+           cui liberare, la cucina deve saperlo per dare la giusta priorità -->
+      <div class="chef-speedup-card hidden" id="roSpeedupCard">
+        <h3>⏱️ Da servire con più velocità</h3>
+        <div id="roSpeedupList"></div>
+      </div>
+
+      <div class="late-alert hidden" id="roLateAlert"></div>
+
     </div>
 
-    <div class="list-content" style="gap:0; padding-top:0">
+    <div class="list-content" id="roBookingList" style="padding-top:0;padding-bottom:8px"></div>
 
-      <!-- PRANZO -->
-      <div class="ro-service-section" id="ro-lunch-section">
-        <div class="ro-service-header">
-          <span class="ro-service-title">🌤️ Pranzo</span>
-          <span class="ro-service-stats" id="ro-lunch-stats"></span>
-        </div>
-        <div id="ro-lunch-list"></div>
+    <!-- Promemoria squadra — in fondo, dopo la lista prenotati che è la
+         priorità; visibili a tutti, non modificabili da qui -->
+    <div class="reminders-card" style="margin:0 16px 120px">
+      <h3>📌 Promemoria</h3>
+      <div id="roRemindersList"></div>
+    </div>
+
+    <!-- Solo per il chef principale — aggiunge una prenotazione senza
+         lasciare questa vista -->
+    <button class="fab-new-booking hidden" id="roFabNewBooking">＋ Nuova prenotazione</button>
+
+  </section>
+
+  <!-- ===================== EVENTI (sola lettura, pagina dedicata) ===================== -->
+  <section class="screen" id="screen-ro-eventi">
+    <div class="topbar">
+      <h1>🎉 Eventi in arrivo</h1>
+    </div>
+    <div class="dashboard-content" id="roEventiPageList"></div>
+  </section>
+
+  <!-- ===================== CHIUSURE (sola lettura, pagina dedicata) ===================== -->
+  <section class="screen" id="screen-ro-chiusure">
+    <div class="topbar">
+      <h1>🚫 Giorni chiusi</h1>
+    </div>
+    <div class="dashboard-content" id="roChiusurePageList"></div>
+  </section>
+
+  <!-- ===================== PIATTI DEL GIORNO (pagina dedicata) ===================== -->
+  <section class="screen" id="screen-ro-piatti">
+    <div class="topbar">
+      <h1>🥘 Piatti del giorno</h1>
+    </div>
+    <div class="dashboard-content">
+      <div class="date-row piatti-date-row">
+        <button class="date-nav-btn" id="piattiPrevDay">‹</button>
+        <span class="date-label" id="piattiDateLabel">Oggi</span>
+        <button class="date-nav-btn" id="piattiNextDay">›</button>
       </div>
-
-      <!-- CENA -->
-      <div class="ro-service-section" id="ro-dinner-section">
-        <div class="ro-service-header">
-          <span class="ro-service-title">🌙 Cena</span>
-          <span class="ro-service-stats" id="ro-dinner-stats"></span>
-        </div>
-        <div id="ro-dinner-list"></div>
-      </div>
-
+      <div class="course-menu-field" id="roWorkerMenuBox"></div>
+      <div class="course-menu-field" id="roHalfBoardMenuBox"></div>
+      <div class="daily-specials-card" id="roDailySpecialsBox"></div>
     </div>
   </section>
 
+  <!-- ===================== PIATTI DEL GIORNO (sala / admin) ===================== -->
+  <section class="screen" id="screen-piatti">
+    <div class="topbar">
+      <button class="icon-btn" id="piattiBackBtn" aria-label="Torna alla Home">‹</button>
+      <h1>Piatti del giorno</h1>
+    </div>
+    <div class="ps-wrap" id="piattiStudio"></div>
+  </section>
+
+  <!-- ===================== DETTAGLIO EVENTO (sola lettura) ===================== -->
+  <section class="screen" id="screen-ro-evento-detail">
+    <div class="topbar">
+      <button class="icon-btn" id="roEventoDetailBack" aria-label="Indietro">←</button>
+      <h1>🎉 Evento</h1>
+    </div>
+    <div class="evento-detail-content" id="roEventoDetailContent"></div>
+    <button class="save-btn hidden" id="roEventoDetailEditBtn" style="margin:16px">✏️ Modifica</button>
+  </section>
+
+  <!-- ===================== MISE SOLA LETTURA ===================== -->
+  <section class="screen" id="screen-ro-mise">
+    <div class="topbar">
+      <h1>Mise en place</h1>
+      <button class="icon-btn" id="roMiseRefreshBtn">🔄</button>
+      <button class="icon-btn" id="roMiseBackBtn">←</button>
+    </div>
+    <div class="dashboard-content">
+      <div class="date-service-card">
+        <div class="date-row">
+          <button class="date-nav-btn" id="roMisePrevDay">‹</button>
+          <span class="date-label" id="roMiseDateLabel">Oggi</span>
+          <button class="date-nav-btn" id="roMiseNextDay">›</button>
+        </div>
+        <div class="service-toggle">
+          <button data-service="lunch" id="roMiseBtnLunch">Pranzo</button>
+          <button data-service="dinner" id="roMiseBtnDinner">Cena</button>
+        </div>
+      </div>
+      <div id="roMiseContent"></div>
+    </div>
+  </section>
+
+
+  <!-- ===================== PROGETTI GASTRONOMICI (solo Luca/Davy) ===================== -->
+  <section class="screen" id="screen-projects">
+    <div class="topbar">
+      <h1>Progetti Gastronomici</h1>
+      <button class="icon-btn" id="projectsModeToggle" title="Modalità semplice/professionale">👔</button>
+      <button class="icon-btn" id="projectsNewBtn" title="Nuovo progetto">＋</button>
+    </div>
+    <div class="list-content" id="projectsList"></div>
+  </section>
+
+  <!-- ===================== FORM PROGETTO (Evento → Quadro economico → Stato/Note) ===================== -->
+  <section class="screen" id="screen-project-form">
+    <div class="topbar">
+      <button class="icon-btn" id="projectFormBackBtn">←</button>
+      <h1 id="projectFormTitle">Nuovo progetto</h1>
+    </div>
+    <div class="form-content">
+      <h2 class="project-phase-title">1 · Cliente</h2>
+      <div class="field-group">
+        <label class="field-label">Nome evento</label>
+        <input type="text" class="text-input" id="pjName" placeholder="Es. Cena di San Valentino" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Nome cliente</label>
+        <input type="text" class="text-input" id="pjClientName" placeholder="Chi lo organizza" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Azienda (facoltativa)</label>
+        <input type="text" class="text-input" id="pjClientCompany" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Telefono</label>
+        <input type="tel" class="text-input" id="pjClientPhone" inputmode="tel" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Email (facoltativa)</label>
+        <input type="email" class="text-input" id="pjClientEmail" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Data (facoltativa, se non ancora decisa)</label>
+        <input type="date" class="text-input" id="pjDate">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Tipo evento</label>
+        <select class="text-input" id="pjEventType">
+          <option value="cena_privata">Cena privata</option>
+          <option value="compleanno">Compleanno</option>
+          <option value="matrimonio">Matrimonio</option>
+          <option value="aziendale">Evento aziendale</option>
+          <option value="gruppo_turistico">Gruppo turistico</option>
+          <option value="degustazione">Degustazione guidata</option>
+          <option value="cena_abbinamento">Cena con abbinamento</option>
+          <option value="aperitivo">Aperitivo-Welcome</option>
+          <option value="privato">Evento privato</option>
+          <option value="altro">Altro</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Coperti previsti</label>
+        <div class="people-stepper">
+          <button class="stepper-btn" id="pjCopertiMinus">−</button>
+          <span class="stepper-value" id="pjCopertiValue">20</span>
+          <button class="stepper-btn" id="pjCopertiPlus">+</button>
+        </div>
+      </div>
+
+      <h2 class="project-phase-title">2 · Cosa chiede il cliente</h2>
+      <div class="field-group">
+        <label class="field-label">Cosa è incluso</label>
+        <div class="project-includes-grid" id="pjIncludesGrid">
+          <button type="button" class="project-include-chip" data-key="aperitivo">Aperitivo</button>
+          <button type="button" class="project-include-chip" data-key="vino">Vino</button>
+          <button type="button" class="project-include-chip" data-key="acqua">Acqua</button>
+          <button type="button" class="project-include-chip" data-key="caffe">Caffè</button>
+          <button type="button" class="project-include-chip" data-key="digestivo">Digestivo</button>
+          <button type="button" class="project-include-chip" data-key="torta">Torta</button>
+          <button type="button" class="project-include-chip" data-key="open_bar">Open bar</button>
+          <button type="button" class="project-include-chip" data-key="servizio_tavolo">Servizio al tavolo</button>
+          <button type="button" class="project-include-chip" data-key="allestimento">Allestimento</button>
+        </div>
+        <div class="field-group hidden" id="pjWineCountGroup" style="margin-top:10px">
+          <label class="field-label">Quanti vini</label>
+          <input type="number" class="text-input" id="pjWineCount" min="1" step="1" inputmode="numeric" placeholder="es. 3">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Budget massimo del cliente (facoltativo)</label>
+        <div style="display:flex;gap:8px">
+          <input type="number" class="text-input" id="pjBudgetMaxPerPerson" min="0" step="1" inputmode="decimal" placeholder="€/persona">
+          <input type="number" class="text-input" id="pjBudgetTotal" min="0" step="10" inputmode="decimal" placeholder="€ totale">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Orari (facoltativi)</label>
+        <div style="display:flex;gap:8px">
+          <input type="time" class="text-input" id="pjArrivalTime" placeholder="Arrivo">
+          <input type="time" class="text-input" id="pjEndTime" placeholder="Fine">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Esigenze alimentari</label>
+        <div class="project-dietary-row">
+          <div><label class="project-dietary-label">Vegetariani</label>
+            <div class="dogs-stepper"><button class="stepper-btn" id="pjVegMinus" type="button">−</button><span class="stepper-value" id="pjVegValue">0</span><button class="stepper-btn" id="pjVegPlus" type="button">+</button></div>
+          </div>
+          <div><label class="project-dietary-label">Vegani</label>
+            <div class="dogs-stepper"><button class="stepper-btn" id="pjVeganMinus" type="button">−</button><span class="stepper-value" id="pjVeganValue">0</span><button class="stepper-btn" id="pjVeganPlus" type="button">+</button></div>
+          </div>
+          <div><label class="project-dietary-label">Celiaci</label>
+            <div class="dogs-stepper"><button class="stepper-btn" id="pjCeliacMinus" type="button">−</button><span class="stepper-value" id="pjCeliacValue">0</span><button class="stepper-btn" id="pjCeliacPlus" type="button">+</button></div>
+          </div>
+        </div>
+        <input type="text" class="text-input" id="pjDietaryOther" placeholder="Altre allergie/intolleranze (testo libero)" style="margin-top:8px" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Note della richiesta</label>
+        <textarea class="text-input" id="pjRequestNotes" rows="3" placeholder="Quello che ha detto il cliente, a modo suo…"></textarea>
+      </div>
+
+      <h2 class="project-phase-title">3 · Economia</h2>
+      <div class="field-group">
+        <label class="field-label">Prezzo menu a persona (€)</label>
+        <input type="number" class="text-input" id="pjPrice" min="0" step="0.5" inputmode="decimal" placeholder="0.00">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Food cost a persona (€)</label>
+        <input type="number" class="text-input" id="pjFoodCost" min="0" step="0.5" inputmode="decimal" placeholder="0.00">
+        <p style="font-size:12px;color:var(--color-ink-soft);margin-top:6px">Il costo di produzione del piatto — non il prezzo di vendita.</p>
+        <button type="button" class="project-courses-toggle-link" id="pjCoursesToggle">📋 Scomponi il food cost per portata (facoltativo)</button>
+        <div id="pjCoursesBox" class="hidden"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Margine target (% sul ricavo)</label>
+        <input type="number" class="text-input" id="pjMarginTarget" min="0" max="100" step="1" inputmode="decimal" placeholder="30">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Food cost massimo (%, vincolo — facoltativo)</label>
+        <input type="number" class="text-input" id="pjFoodCostMax" min="0" max="100" step="1" inputmode="decimal" placeholder="es. 30">
+        <p style="font-size:12px;color:var(--color-ink-soft);margin-top:6px">Un limite che non vuoi superare — diverso dal margine target, che invece è un obiettivo da centrare.</p>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Costo personale per l'evento (€, totale — facoltativo)</label>
+        <input type="number" class="text-input" id="pjStaffCost" min="0" step="10" inputmode="decimal" placeholder="0">
+        <p style="font-size:12px;color:var(--color-ink-soft);margin-top:6px">Una stima tua — non calcolata automaticamente, non c'è un modulo turni collegato.</p>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Altri costi (€, totale — allestimento, servizi esterni…)</label>
+        <input type="number" class="text-input" id="pjOtherCosts" min="0" step="10" inputmode="decimal" placeholder="0">
+      </div>
+
+      <h2 class="project-phase-title">4 · Quadro economico</h2>
+      <div id="projectEconomicsBox"></div>
+      <div id="projectConstraintAlert"></div>
+
+      <h2 class="project-phase-title">5 · Stato e note</h2>
+      <div id="projectOperationalBox" class="hidden"></div>
+      <div class="field-group">
+        <label class="field-label">Stato progetto</label>
+        <div class="status-options" id="projectStatusOptions"></div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Note</label>
+        <textarea class="text-input" id="pjNotes" rows="4" placeholder="Vini, menu, fornitori, checklist libera…"></textarea>
+      </div>
+
+      <button type="button" class="save-btn" id="projectSummaryBtn" style="background:var(--color-info);margin-bottom:10px">📄 Riepilogo menu (per il preventivo)</button>
+      <button class="save-btn" id="projectSaveBtn">Salva progetto</button>
+      <a href="#" class="delete-link hidden" id="projectDeleteLink">Elimina progetto</a>
+    </div>
+  </section>
+
+  <!-- ===================== BUONI REGALO ===================== -->
+  <section class="screen" id="screen-buoni">
+    <div class="topbar">
+      <h1>Buoni Regalo</h1>
+      <button class="icon-btn" id="buoniNewBtn" title="Nuovo buono">＋</button>
+    </div>
+
+    <div class="search-bar-wrap">
+      <input type="text" class="search-input" id="buoniSearchInput"
+        placeholder="Cerca per codice, nome o telefono…" autocomplete="off">
+    </div>
+
+    <div class="list-content" id="buoniList"></div>
+  </section>
+
+  <!-- ===================== FORM NUOVO BUONO ===================== -->
+  <section class="screen" id="screen-buono-form">
+    <div class="topbar">
+      <button class="icon-btn" id="buonoFormBackBtn">←</button>
+      <h1 id="buonoFormTitle">Nuovo buono</h1>
+    </div>
+    <div class="form-content">
+      <div class="field-group">
+        <label class="field-label">Codice buono</label>
+        <input type="text" class="text-input" id="bCodice" placeholder="Es. BC-2026-001" autocomplete="off" style="text-transform:uppercase">
+        <p style="font-size:12px;color:var(--color-ink-soft);margin-top:6px">Generato in automatico — modificalo se ti serve un formato diverso.</p>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Contenuto del buono</label>
+        <textarea class="text-input" id="bContenuto" placeholder="Es. 2 persone · 3 portate · 1 bottiglia di vino…" rows="3"></textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Numero di persone</label>
+        <div class="people-stepper">
+          <button class="stepper-btn" id="bPersoneMinus">−</button>
+          <span class="stepper-value" id="bPersoneValue">—</span>
+          <button class="stepper-btn" id="bPersonePlus">+</button>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Valore monetario (€) — opzionale</label>
+        <input type="number" class="text-input" id="bValore" placeholder="Lascia vuoto se non monetario" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Intestato a</label>
+        <input type="text" class="text-input" id="bNome" placeholder="Nome acquirente" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Telefono</label>
+        <input type="tel" class="text-input" id="bTelefono" placeholder="Numero di telefono" inputmode="tel" autocomplete="off">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Data di scadenza</label>
+        <input type="date" class="text-input" id="bScadenza">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Note</label>
+        <textarea class="text-input" id="bNote" placeholder="Note libere…"></textarea>
+      </div>
+      <div style="height:100px"></div>
+    </div>
+    <div class="form-footer">
+      <button class="save-btn" id="buonoSaveBtn" disabled>Salva buono</button>
+    </div>
+  </section>
+
+  <!-- ===================== MISE EN PLACE ===================== -->
+  <section class="screen" id="screen-mise">
+    <div class="topbar">
+      <h1>Mise en place</h1>
+      <button class="icon-btn" id="miseRefreshBtn">🔄</button>
+    </div>
+    <div class="dashboard-content">
+      <div class="date-service-card">
+        <div class="date-row">
+          <button class="date-nav-btn" id="misePrevDay">‹</button>
+          <span class="date-label" id="miseDateLabel">Oggi</span>
+          <button class="date-nav-btn" id="miseNextDay">›</button>
+        </div>
+        <div class="service-toggle">
+          <button data-service="lunch" id="miseBtnLunch">Pranzo</button>
+          <button data-service="dinner" id="miseBtnDinner">Cena</button>
+        </div>
+      </div>
+      <div id="miseContent"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ORDINI / INVENTARIO =====================
+       Un dipendente aggiorna la quantità in magazzino una volta a
+       settimana, Luca controlla dal telefono cosa è sotto soglia e fa
+       gli ordini. Niente storico movimenti — solo "quanto c'è adesso". -->
+  <section class="screen" id="screen-ordini">
+    <div class="topbar">
+      <h1>📦 Ordini</h1>
+      <button class="icon-btn" id="ordiniHistoryBtn" aria-label="Storico conteggi">🕐</button>
+      <button class="icon-btn admin-only" id="ordiniAddItemBtn" style="display:none" aria-label="Aggiungi articolo">＋</button>
+    </div>
+    <div class="config-content">
+      <div id="ordiniCountBanner"></div>
+      <div id="ordiniLowStockBanner" class="hidden"></div>
+      <div id="ordiniList"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ORDINI DI SERVIZIO (ODS) =====================
+       Tutta l'interfaccia vive dentro uno Shadow DOM creato da js/ods.js -->
+  <section class="screen" id="screen-ods">
+    <div id="odsHost"></div>
+  </section>
+
+  <!-- ===================== PANNELLO PROPOSTE DEL GIORNO (drawer) =====================
+       Vive fuori dal flusso normale della pagina — si sovrappone alla
+       Dashboard invece di spingerla giù. Aperto/chiuso con una classe
+       CSS, non con display:none, per poter animare lo scorrimento. -->
+  <div class="ds-drawer-overlay" id="dailySpecialsDrawerOverlay"></div>
+  <div class="ds-drawer-panel" id="dailySpecialsDrawerPanel" role="dialog" aria-label="Proposte del giorno">
+    <div class="ds-drawer-header">
+      <h3>Menu di oggi</h3>
+      <button type="button" class="ds-drawer-close" id="dailySpecialsDrawerClose" aria-label="Chiudi">✕</button>
+    </div>
+    <div class="tablet-unlock-banner hidden" id="tabletUnlockBanner">
+      <span>🔒 Sola lettura — serve il codice per modificare</span>
+      <button type="button" id="tabletUnlockBtn">Sblocca</button>
+    </div>
+    <div class="ds-drawer-scroll">
+      <div class="course-menu-field" id="dashWorkerMenuBox"></div>
+      <div class="course-menu-field" id="dashHalfBoardMenuBox"></div>
+      <!-- Stesso id di sempre — tutto il codice che lo popola e lo
+           gestisce (modifica, elimina, porzioni, ecc.) resta identico,
+           cambia solo dove si trova nella pagina. -->
+      <div class="daily-specials-card" id="dashDailySpecialsBox"></div>
+    </div>
+  </div>
+
   <!-- BOTTOM NAV -->
   <nav class="bottom-nav" id="bottomNav" style="display:none">
-    <button class="nav-item" data-screen="dashboard"><span class="nav-icon">🏠</span>Home</button>
-    <button class="nav-item" data-screen="list"><span class="nav-icon">📋</span>Lista</button>
-    <button class="nav-item" data-screen="search"><span class="nav-icon">🔍</span>Cerca</button>
-    <button class="nav-item" data-screen="config"><span class="nav-icon">⚙️</span>Impostazioni</button>
+    <button class="nav-item" data-screen="dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></span>Home</button>
+    <button class="nav-item" data-screen="list"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span>Lista</button>
+    <button class="nav-item" data-screen="search"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-4.35-4.35"/></svg></span>Cerca</button>
+    <button class="nav-item admin-only" data-screen="buoni" style="display:none"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 8h18"/><path d="M12 8v13"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 8 12 8"/><path d="M16.5 8a2.5 2.5 0 0 0 0-5C14 3 12 8 12 8"/></svg></span>Buoni</button>
+    <button class="nav-item admin-only" data-screen="mise" style="display:none"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 2 2v9"/><path d="M7 3v5"/><path d="M10 3v5"/><path d="M16 3c-1 0-2 1.5-2 4s1 4 2 4v10"/></svg></span>Mise</button>
+    <button class="nav-item admin-only" data-screen="ordini" style="display:none"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7Z"/><path d="M8 7V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3"/></svg></span>Ordini</button>
+    <button class="nav-item fulladmin-only" data-screen="projects" style="display:none"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10"/><path d="M12 20V4"/><path d="M20 20v-7"/><path d="M2 20h20"/></svg></span>Progetti</button>
+    <button class="nav-item" data-screen="config"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="nav-label" data-short="Opzioni">Impostazioni</span></button>
+  </nav>
+
+  <!-- Mini nav sola lettura (chef) — un elemento unico e fisso, fuori da
+       tutte le schermate ro-*, così resta sempre visibile qualunque
+       scheda si stia guardando, non solo su "Lista" -->
+  <nav class="ro-bottom-nav" id="roBottomNav" style="display:none">
+    <button class="ro-nav-btn active" id="roBtnList">📋 Lista</button>
+    <button class="ro-nav-btn" id="roBtnEventi">🎉 Eventi</button>
+    <button class="ro-nav-btn" id="roBtnChiusure">🚫 Chiusi</button>
+    <button class="ro-nav-btn" id="roBtnPiatti">🥘 Piatti</button>
+    <button class="ro-nav-btn" id="roBtnMise">🍽️ Mise</button>
   </nav>
 
   <!-- MODAL CANCELLAZIONE -->
   <div class="modal-overlay" id="deleteModal">
     <div class="modal-sheet">
-      <h3>Cancellare questa prenotazione?</h3>
-      <p style="color:var(--color-ink-soft);font-size:14px">L'operazione non si può annullare.</p>
+      <h3>Archiviare questa prenotazione?</h3>
+      <p style="color:var(--color-ink-soft);font-size:14px">Sparisce dalle liste ma resta consultabile — non è una cancellazione definitiva.</p>
       <div class="modal-actions">
         <button class="modal-btn-cancel" id="deleteModalCancel">Annulla</button>
-        <button class="modal-btn-confirm" id="deleteModalConfirm">Cancella</button>
+        <button class="modal-btn-confirm" id="deleteModalConfirm">Archivia</button>
       </div>
     </div>
   </div>
 
 </div>
-<script src="js/storage.js"></script>
-<script src="js/config.js"></script>
-<script src="js/slots.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/db.js"></script>
-<script src="js/bookings.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
+
+<!-- Template stampa buono — fuori da #app apposta: in stampa nascondiamo
+     tutto #app in un colpo solo (comprese le modal create dinamicamente
+     durante la sessione) e mostriamo solo questo. -->
+<div id="buonoPrintTemplate" class="buono-print-only"></div>
+
+<!-- Libreria di Supabase — solo per il tempo reale (restare in ascolto
+     di cambiamenti, invece di richiedere ogni tot secondi "è cambiato
+     qualcosa?"). Se questo indirizzo non è raggiungibile (davvero
+     offline al primo avvio, o il CDN non risponde), l'app non si rompe:
+     il resto del codice controlla se la libreria è arrivata prima di
+     usarla, e se non c'è prosegue con il controllo periodico di riserva
+     invece del tempo reale. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/storage.js?v=1791600000"></script>
+<script src="js/slots.js?v=1791600000"></script>
+<script src="js/utils.js?v=1791600000"></script>
+<script src="js/db.js?v=1791600000"></script>
+<script src="js/config.js?v=1791600000"></script>
+<script src="js/bookings.js?v=1791600000"></script>
+<script src="js/buoni.js?v=1791600000"></script>
+<script src="js/piantina.js?v=1791600000"></script>
+<script src="js/stats.js?v=1791600000"></script>
+<script src="js/ods.js?v=1791600000"></script>
+<script src="js/ui.js?v=1791600000"></script>
+<script src="js/piatti.js?v=1791600000"></script>
+<script src="js/app.js?v=1791600000"></script>
 </body>
 </html>
