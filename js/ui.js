@@ -102,6 +102,7 @@ const UI = {
     const rows = [];
     rows.push({ label: 'Quando', value: Utils.relativeDayLabel(b.date) + ' — ' + Utils.formatDateShort(b.date) + ' · ' + b.time + ' (' + (b.service === 'lunch' ? 'Pranzo' : 'Cena') + ')' });
     rows.push({ label: 'Coperti', value: b.people + (b.highchairs > 0 ? ' (+' + b.highchairs + ' seggiolini)' : '') });
+    if (Bookings.dietaryAlert(b)) rows.push({ label: '⚠️ Avviso', value: Bookings.dietaryAlert(b), warn: true });
     if (b.intolerances) rows.push({ label: 'Allergie / Intolleranze', value: b.intolerances, warn: true });
     if (eventoDetails && eventoDetails.menu) rows.push({ label: 'Menu', value: eventoDetails.menu });
     if (eventoDetails && eventoDetails.vino) rows.push({ label: 'Vino', value: eventoDetails.vino });
@@ -717,6 +718,7 @@ const UI = {
       '</div>' +
       '<div class="event-row-info">' +
         '<strong>' + this.escapeHTML(b.name || '(senza nome)') + '</strong> · ' + b.people + ' pers.' +
+        this.dietaryAlertHTML(b, true) +
         (b.intolerances ? '<div class="event-row-allergy">⚠️ ' + this.escapeHTML(b.intolerances) + '</div>' : '') +
         (userNotes ? '<div class="event-row-note">📝 ' + this.escapeHTML(userNotes) + '</div>' : '') +
       '</div>' +
@@ -1936,6 +1938,7 @@ const UI = {
           booking.time + ' · ' + booking.people + ' persone' +
         '</p>' +
         (booking.phone ? '<p style="font-size:13px;margin-bottom:10px"><a href="' + Utils.telLink(booking.phone) + '" style="color:var(--color-primary);font-weight:600">📞 ' + this.escapeHTML(booking.phone) + '</a></p>' : '') +
+        this.dietaryAlertHTML(booking) +
         (tags.length ? '<div class="booking-tags" style="margin-bottom:10px">' + tags.join('') + '</div>' : '') +
         // Le tracce di sistema (spostamenti tavolo, ecc.) restano salvate
         // nei dati per chi ne avesse mai bisogno, ma non si mostrano più
@@ -2602,6 +2605,7 @@ const UI = {
           '<span class="booking-name ' + (b.arrivedAt ? 'name-arrived' : '') + '">' + (this.escapeHTML(b.name) || '(senza nome)') + '</span>' +
           '<span class="people-badge">' + b.people + ' cop.' + (b.highchairs > 0 ? ' + ' + b.highchairs + ' segg.' : '') + '</span>' +
         '</div>' +
+        this.dietaryAlertHTML(b) +
         '<div class="booking-actions-row">' +
           checkBtn +
           noshowBtn +
@@ -3271,6 +3275,7 @@ const UI = {
           '</div>' +
           '<button type="button" class="icon-btn" id="bookingDetailClose">✕</button>' +
         '</div>' +
+        this.dietaryAlertHTML(b) +
         '<div class="booking-detail-rows">' +
           rows.map(r => '<div class="booking-detail-row"><span class="booking-detail-label">' + r.label + '</span><span class="booking-detail-value">' + (r.raw ? r.value : r.value) + '</span></div>').join('') +
         '</div>' +
@@ -3284,6 +3289,84 @@ const UI = {
       modal.classList.remove('active');
       this.openEditForm(b.id);
     });
+  },
+
+  // ===== Allergie e intolleranze: avviso per la sala + consenso =====
+
+  /**
+   * Riquadro ben visibile "⚠️ Richiesta alimentare da verificare al
+   * tavolo" — stringa vuota se la prenotazione non ha allergie.
+   * `compact` = versione a etichetta, per le righe strette.
+   */
+  dietaryAlertHTML(b, compact) {
+    const text = Bookings.dietaryAlert(b);
+    if (!text) return '';
+    return compact
+      ? '<span class="tag dietary-alert-tag">⚠️ ' + this.escapeHTML(text) + '</span>'
+      : '<div class="dietary-alert" role="note">⚠️ ' + this.escapeHTML(text) + '</div>';
+  },
+
+  /** Nel modulo aperto serve ancora il consenso per annotare allergie? */
+  _formNeedsAllergyConsent() {
+    if (this._formAllergyConsent) return false;
+    const id = this.state.editingBookingId;
+    if (id && Bookings.hasAllergyConsent(Bookings.getById(id))) return false;
+    return true;
+  },
+
+  /** Esegue `onOk` subito se il consenso c'è già, altrimenti dopo il pop-up. */
+  requestAllergyConsent(onOk) {
+    if (!this._formNeedsAllergyConsent()) { onOk(); return; }
+    this.openAllergyConsentModal((consent) => {
+      this._formAllergyConsent = consent;
+      onOk();
+    });
+  },
+
+  /**
+   * POP-UP — ALLERGIE E INTOLLERANZE. Frase da leggere al cliente, casella
+   * obbligatoria, CONFERMA (attivo solo con la casella spuntata) / ANNULLA.
+   * onConfirm riceve { at, by }: quando e chi ha confermato.
+   */
+  openAllergyConsentModal(onConfirm, onCancel) {
+    let modal = document.getElementById('allergyConsentModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'allergyConsentModal';
+      // "bloccante": un tocco fuori non la chiude, serve una scelta esplicita
+      modal.className = 'modal-overlay modal-overlay-centered modal-blocking';
+      document.getElementById('app').appendChild(modal);
+    }
+    modal.innerHTML =
+      '<div class="modal-sheet modal-sheet-centered allergy-consent-sheet" role="dialog" aria-modal="true" aria-labelledby="allergyConsentTitle">' +
+        '<div class="allergy-consent-icon" aria-hidden="true">⚠️</div>' +
+        '<h3 id="allergyConsentTitle">Allergie e intolleranze</h3>' +
+        '<p class="allergy-consent-lead">Frase da leggere:</p>' +
+        '<blockquote class="allergy-consent-question">«' + this.escapeHTML(ALLERGY_CONSENT_QUESTION) + '»</blockquote>' +
+        '<label class="allergy-consent-check">' +
+          '<input type="checkbox" id="allergyConsentCheck">' +
+          '<span>Confermo di aver fornito l\'informazione e ricevuto risposta affermativa.</span>' +
+        '</label>' +
+        '<div class="modal-actions">' +
+          '<button type="button" class="modal-btn-cancel" id="allergyConsentCancel">ANNULLA</button>' +
+          '<button type="button" class="modal-btn-confirm" id="allergyConsentConfirm" style="background:var(--color-primary)" disabled>CONFERMA</button>' +
+        '</div>' +
+      '</div>';
+    const check = modal.querySelector('#allergyConsentCheck');
+    const confirmBtn = modal.querySelector('#allergyConsentConfirm');
+    check.addEventListener('change', () => { confirmBtn.disabled = !check.checked; });
+    const close = () => modal.classList.remove('active');
+    modal.querySelector('#allergyConsentCancel').addEventListener('click', () => {
+      close();
+      if (onCancel) onCancel();
+    });
+    confirmBtn.addEventListener('click', () => {
+      if (!check.checked) return; // casella obbligatoria
+      close();
+      onConfirm({ at: new Date().toISOString(), by: DB.getOperatorWithDevice() || null });
+    });
+    modal.classList.add('active');
+    check.focus();
   },
 
   openActionsMenu(b, anchorEl) {
@@ -3631,6 +3714,9 @@ const UI = {
       dogs: b.dogs,
       highchairs: b.highchairs || 0,
       intolerances: b.intolerances,
+      // il consenso già registrato sull'originale vale anche per la copia
+      // (se l'originale non ce l'ha, il pop-up si apre al salvataggio)
+      allergyConsent: b.consenso_allergie_il ? { at: b.consenso_allergie_il, by: b.consenso_allergie_da || null } : null,
       specialNeeds: b.specialNeeds || b.special_needs || '',
       // Solo la nota vera — una prenotazione duplicata è nuova, non deve
       // ereditare marcatori come "Evento" o un pagamento già registrato.
@@ -3774,6 +3860,14 @@ const UI = {
       modal.querySelector('#mdConfirmBtn').addEventListener('click', async () => {
         if (dates.length === 0) { this.toast('Aggiungi almeno un giorno', 'warning'); return; }
         if (selectedTables.size === 0) { this.toast('Seleziona un tavolo', 'warning'); return; }
+        // Le allergie si copiano sui nuovi giorni solo con il consenso:
+        // quello già registrato sulla prenotazione originale, oppure (per
+        // le prenotazioni più vecchie, senza registro) chiesto adesso.
+        let mdConsent = b.consenso_allergie_il ? { at: b.consenso_allergie_il, by: b.consenso_allergie_da || null } : null;
+        if (b.intolerances && !mdConsent) {
+          mdConsent = await new Promise(res => this.openAllergyConsentModal(c => res(c), () => res(null)));
+          if (!mdConsent) { this.toast('Senza conferma del consenso le allergie non si copiano: duplicazione annullata', 'warning'); return; }
+        }
         modal.classList.remove('active');
         this.showSyncIndicator(true);
 
@@ -3800,6 +3894,7 @@ const UI = {
             date: d, time, service, zone: b.zone,
             dogs: b.dogs, highchairs: b.highchairs || 0,
             intolerances: b.intolerances,
+            allergyConsent: mdConsent,
             specialNeeds: b.specialNeeds || b.special_needs || '',
             notes: duplicatedNotes, status: STATUS.CONFIRMED,
             tablesAssigned: hasConflict ? null : tablesStr,
@@ -3945,6 +4040,7 @@ const UI = {
   _openNewFormNow(overrides) {
     overrides = overrides || {};
     this.state.editingBookingId = null;
+    this._formAllergyConsent = overrides.allergyConsent || null;
     this._formZoneClosureOverride = null;
     this.state.formZone = overrides.zone || 'any';
     this.state.formStatus = STATUS.CONFIRMED;
@@ -4064,6 +4160,7 @@ const UI = {
     const b = Bookings.getById(bookingId);
     if (!b) return;
     this.state.editingBookingId = bookingId;
+    this._formAllergyConsent = null;
     this._formZoneClosureOverride = null;
     this.state.formZone = b.zone;
     this.state.formStatus = b.status;
@@ -5098,6 +5195,17 @@ const UI = {
 
   async saveForm() {
     if (!DB.canEdit()) return;
+    // Allergie: senza il consenso confermato nel pop-up non si salvano.
+    // (Il pop-up si apre già toccando "+ Allergia"; questo è il controllo
+    // finale, per ogni altro modo in cui il campo può essersi riempito.)
+    const intolValue = (document.getElementById('fIntolerances').value || '').trim();
+    if (intolValue && this._formNeedsAllergyConsent()) {
+      this.openAllergyConsentModal(
+        (consent) => { this._formAllergyConsent = consent; this.saveForm(); },
+        () => this.toast('Senza consenso l\'allergia non si può annotare: conferma oppure cancella il testo', 'warning')
+      );
+      return;
+    }
     // Rete di sicurezza finale: ricontrolla la chiusura appena prima di
     // salvare, indipendentemente da quanto già impedito nell'interfaccia.
     const dateVal = document.getElementById('fDate').value;
@@ -5338,6 +5446,7 @@ const UI = {
       dogs: this._dogsValue,
       highchairs: this._highchairsValue || 0,
       intolerances: document.getElementById('fIntolerances').value,
+      allergyConsent: this._formAllergyConsent || null,
       specialNeeds: document.getElementById('fSpecialNeeds').value,
       notes: noteParts.filter(Boolean).join(' · '),
       // Se tolgono la spunta lista d'attesa/asporto da una prenotazione che
@@ -6528,6 +6637,7 @@ const UI = {
     if (b.zone && b.zone !== 'any') extras.push(ZONE_LABELS[b.zone] || b.zone);
     if (b.dogs > 0) extras.push('🐾 ' + b.dogs);
     if (b.highchairs > 0) extras.push(b.highchairs + ' segg.');
+    if (Bookings.dietaryAlert(b)) extras.push('⚠️ ' + Bookings.dietaryAlert(b).toUpperCase());
     if (b.intolerances) extras.push('⚠️ ' + b.intolerances);
     if (b.doubleShift) extras.push('libera ' + b.doubleShift.releaseTime);
     if (b.tablesAssigned) extras.push('Tav. ' + b.tablesAssigned);
@@ -7349,6 +7459,7 @@ const UI = {
             (Bookings.getStayVisitNumber(b) ? ' · ' + (Bookings.getStayVisitNumber(b) === 1 ? '👋 Prima volta' : '🔁 ' + Bookings.getStayVisitNumber(b) + 'ª volta') : '') +
           '</div>' : '') +
           (isWorkerMenu ? '<div class="chef-row-worker-menu">👷 Menu operaio</div>' : '') +
+          this.dietaryAlertHTML(b, true) +
           (b.intolerances ? '<div class="chef-row-allergy">⚠️ ' + this.escapeHTML(b.intolerances) + '</div>' : '') +
           (userNotes ? '<div class="chef-row-note">📝 ' + this.escapeHTML(userNotes) + '</div>' : '') +
         '</div>';

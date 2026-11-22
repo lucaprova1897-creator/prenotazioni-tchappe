@@ -28,6 +28,15 @@ const STATUS_LABELS = {
   asporto:   'Asporto',
 };
 
+// Avviso per la sala quando c'è un'allergia/intolleranza. Il testo vero lo
+// scrive il database (trigger trg_avviso_alimentare → avviso_alimentare),
+// così vale per qualunque prenotazione, chiunque l'abbia fatta; l'app lo
+// ricava anche da sola dal campo allergie, per sicurezza.
+const DIETARY_ALERT_TEXT = 'Richiesta alimentare da verificare al tavolo';
+
+// Frase da leggere al cliente prima di annotare un allergene (pop-up).
+const ALLERGY_CONSENT_QUESTION = 'Possiamo annotare gli allergeni segnalati per organizzare il servizio in sicurezza, senza indicare il nome delle persone interessate?';
+
 const ZONE_LABELS = {
   indoor:  'Interno',
   outdoor: 'Esterno',
@@ -643,6 +652,7 @@ const Bookings = {
       is_new:       true,
       created_by:   DB.getOperatorWithDevice() || null,
     };
+    this._applyAllergyConsent(booking, data);
 
     const created = await DB.create(booking);
     if (created) {
@@ -673,6 +683,7 @@ const Bookings = {
       double_shift_release: data.doubleShiftRelease || null,
       tables_assigned: data.tablesAssigned || null,
     };
+    this._applyAllergyConsent(patch, data);
 
     const updated = await DB.update(id, patch);
     if (updated) {
@@ -729,6 +740,34 @@ const Bookings = {
    * Normalizza i nomi dei campi Supabase (snake_case) verso
    * quelli usati nell'app (camelCase) per compatibilità con la UI.
    */
+  /**
+   * Consenso agli allergeni (pop-up): si scrive solo quando c'è davvero
+   * un'allergia e il personale l'ha appena confermato — mai per le
+   * prenotazioni senza allergie, e non si sovrascrive quello già salvato.
+   */
+  _applyAllergyConsent(row, data) {
+    const c = data && data.allergyConsent;
+    if (!c || !row.intolerances) return;
+    row.consenso_allergie_il = c.at;
+    row.consenso_allergie_da = c.by || null;
+  },
+
+  /**
+   * Avviso "Richiesta alimentare da verificare al tavolo" — quello scritto
+   * dal database, oppure ricavato dal campo allergie se il database non
+   * l'ha ancora impostato. Stringa vuota se non c'è nessuna allergia.
+   */
+  dietaryAlert(b) {
+    if (!b) return '';
+    if (b.avviso_alimentare) return b.avviso_alimentare;
+    return (b.intolerances && String(b.intolerances).trim()) ? DIETARY_ALERT_TEXT : '';
+  },
+
+  /** Il consenso agli allergeni è già registrato (o c'erano già allergie)? */
+  hasAllergyConsent(b) {
+    return !!(b && (b.consenso_allergie_il || (b.intolerances && String(b.intolerances).trim())));
+  },
+
   _normalize(b) {
     return {
       ...b,

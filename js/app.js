@@ -141,7 +141,8 @@ function bindGlobalDelegation() {
     if (id === 'projectSaveBtn') { await UI.saveProject(); return; }
     if (id === 'projectSummaryBtn') { UI.openProjectSummaryModal(); return; }
     if (id === 'projectDeleteLink') { e.preventDefault(); await UI.deleteProject(); return; }
-    if (id === 'fIntolerancesChip') { UI.expandQuickField('fIntolerancesChip', 'fIntolerancesWrap', 'fIntolerances'); return; }
+    // Allergie: prima il pop-up di consenso (frase da leggere + casella), poi il campo
+    if (id === 'fIntolerancesChip') { UI.requestAllergyConsent(() => UI.expandQuickField('fIntolerancesChip', 'fIntolerancesWrap', 'fIntolerances')); return; }
     if (id === 'fSpecialNeedsChip') { UI.expandQuickField('fSpecialNeedsChip', 'fSpecialNeedsWrap', 'fSpecialNeeds'); return; }
     if (id === 'fNotesChip') { UI.expandQuickField('fNotesChip', 'fNotesWrap', 'fNotes'); return; }
 

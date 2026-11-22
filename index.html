@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Prenotazioni">
 <link rel="stylesheet" href="css/styles.css?v=1791600000">
+<link rel="stylesheet" href="css/modern.css?v=1795400000">
 </head>
 <body>
 <div id="app">
@@ -649,7 +650,8 @@
             <button type="button" class="field-quick-add-btn field-quick-add-kitchen" id="fIntolerancesChip">🍳 ＋ Allergia</button>
             <div class="field-group hidden" id="fIntolerancesWrap">
               <label class="field-label">🍳 Allergie / intolleranze — per la cucina</label>
-              <textarea class="text-input" id="fIntolerances" placeholder="Es. glutine, lattosio…" rows="1"></textarea>
+              <textarea class="text-input" id="fIntolerances" placeholder="Solo l'allergene (es. glutine, lattosio) — senza il nome della persona" rows="1"></textarea>
+              <p class="allergy-field-hint">Si cancella da sola 10 giorni dopo il servizio (la notte stessa se la prenotazione viene cancellata, archiviata o è un no-show).</p>
             </div>
           </div>
           <div class="field-quick-item">
@@ -1384,5 +1386,6 @@
 <script src="js/ui.js?v=1791600000"></script>
 <script src="js/piatti.js?v=1791600000"></script>
 <script src="js/app.js?v=1791600000"></script>
+<script src="js/modern.js?v=1795400000"></script>
 </body>
 </html>
