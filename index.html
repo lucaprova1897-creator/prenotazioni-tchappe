@@ -5,15 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Prenotazioni · Lou Tchappé</title>
 <meta name="theme-color" content="#F6F3EE">
-<link rel="manifest" href="manifest.json?v=1795500000">
+<link rel="manifest" href="manifest.json?v=1795600000">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Prenotazioni">
-<link rel="stylesheet" href="css/styles.css?v=1795500000">
-<link rel="stylesheet" href="css/modern.css?v=1795500000">
+<link rel="stylesheet" href="css/styles.css?v=1795600000">
+<link rel="stylesheet" href="css/modern.css?v=1795600000">
+<link rel="stylesheet" href="css/chef.css?v=1795600000">
 </head>
 <body>
 <div id="app">
@@ -848,7 +849,7 @@
       <button class="icon-btn events-badge-btn hidden" id="roTakeawayBadgeBtn" aria-label="Asporti da preparare">
         🥡 Asporti<span class="events-badge-count" id="roTakeawayBadgeCount">0</span>
       </button>
-      <button class="icon-btn events-badge-btn" id="roOdsBtn" aria-label="Ordini di servizio">📋 ODS<span class="events-badge-count hidden" id="roOdsBadge"></span></button>
+      <button class="icon-btn events-badge-btn" id="roOdsBtn" aria-label="Ordini di servizio"><span class="chef-ods-ico" aria-hidden="true">📋</span><span class="chef-ods-txt">ODS</span><span class="events-badge-count hidden" id="roOdsBadge"></span></button>
       <button class="icon-btn" id="roPushToggleBtn" aria-label="Notifiche">🔔</button>
       <button class="icon-btn hidden" id="roManageAccessBtn" aria-label="Gestisci accessi">🔐</button>
       <button class="icon-btn" id="roRefreshBtn" aria-label="Aggiorna">🔄</button>
@@ -944,9 +945,14 @@
   <!-- ===================== EVENTI (sola lettura, pagina dedicata) ===================== -->
   <section class="screen" id="screen-ro-eventi">
     <div class="topbar">
-      <h1>🎉 Eventi in arrivo</h1>
+      <h1>Calendario</h1>
     </div>
-    <div class="dashboard-content" id="roEventiPageList"></div>
+    <div class="dashboard-content chef-cal">
+      <h2 class="chef-sec-title"><span aria-hidden="true">🎉</span> Eventi in arrivo</h2>
+      <div id="roEventiPageList"></div>
+      <h2 class="chef-sec-title"><span aria-hidden="true">🚫</span> Giorni chiusi</h2>
+      <div id="roChiusurePageList"></div>
+    </div>
   </section>
 
   <!-- ===================== CHIUSURE (sola lettura, pagina dedicata) ===================== -->
@@ -954,7 +960,7 @@
     <div class="topbar">
       <h1>🚫 Giorni chiusi</h1>
     </div>
-    <div class="dashboard-content" id="roChiusurePageList"></div>
+    <div class="dashboard-content"></div>
   </section>
 
   <!-- ===================== PIATTI DEL GIORNO (pagina dedicata) ===================== -->
@@ -1339,11 +1345,10 @@
        tutte le schermate ro-*, così resta sempre visibile qualunque
        scheda si stia guardando, non solo su "Lista" -->
   <nav class="ro-bottom-nav" id="roBottomNav" style="display:none">
-    <button class="ro-nav-btn active" id="roBtnList">📋 Lista</button>
-    <button class="ro-nav-btn" id="roBtnEventi">🎉 Eventi</button>
-    <button class="ro-nav-btn" id="roBtnChiusure">🚫 Chiusi</button>
-    <button class="ro-nav-btn" id="roBtnPiatti">🥘 Piatti</button>
-    <button class="ro-nav-btn" id="roBtnMise">🍽️ Mise</button>
+    <button class="ro-nav-btn active" id="roBtnList"><span class="ro-nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span><span class="ro-nav-lbl">Servizio</span></button>
+    <button class="ro-nav-btn" id="roBtnPiatti"><span class="ro-nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h18"/><path d="M5 14a7 7 0 0 1 14 0"/><path d="M12 7V5"/><path d="M2 18h20"/></svg></span><span class="ro-nav-lbl">Piatti</span></button>
+    <button class="ro-nav-btn" id="roBtnMise"><span class="ro-nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 2 2v9"/><path d="M7 3v5"/><path d="M10 3v5"/><path d="M16 3c-1 0-2 1.5-2 4s1 4 2 4v10"/></svg></span><span class="ro-nav-lbl">Mise</span></button>
+    <button class="ro-nav-btn" id="roBtnEventi"><span class="ro-nav-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 3v3M16 3v3"/></svg></span><span class="ro-nav-lbl">Calendario</span><span class="ro-nav-dot hidden" id="chefCalDot"></span></button>
   </nav>
 
   <!-- MODAL CANCELLAZIONE -->
@@ -1373,19 +1378,20 @@
      usarla, e se non c'è prosegue con il controllo periodico di riserva
      invece del tempo reale. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="js/storage.js?v=1795500000"></script>
-<script src="js/slots.js?v=1795500000"></script>
-<script src="js/utils.js?v=1795500000"></script>
-<script src="js/db.js?v=1795500000"></script>
-<script src="js/config.js?v=1795500000"></script>
-<script src="js/bookings.js?v=1795500000"></script>
-<script src="js/buoni.js?v=1795500000"></script>
-<script src="js/piantina.js?v=1795500000"></script>
-<script src="js/stats.js?v=1795500000"></script>
-<script src="js/ods.js?v=1795500000"></script>
-<script src="js/ui.js?v=1795500000"></script>
-<script src="js/piatti.js?v=1795500000"></script>
-<script src="js/app.js?v=1795500000"></script>
-<script src="js/modern.js?v=1795500000"></script>
+<script src="js/storage.js?v=1795600000"></script>
+<script src="js/slots.js?v=1795600000"></script>
+<script src="js/utils.js?v=1795600000"></script>
+<script src="js/db.js?v=1795600000"></script>
+<script src="js/config.js?v=1795600000"></script>
+<script src="js/bookings.js?v=1795600000"></script>
+<script src="js/buoni.js?v=1795600000"></script>
+<script src="js/piantina.js?v=1795600000"></script>
+<script src="js/stats.js?v=1795600000"></script>
+<script src="js/ods.js?v=1795600000"></script>
+<script src="js/ui.js?v=1795600000"></script>
+<script src="js/piatti.js?v=1795600000"></script>
+<script src="js/app.js?v=1795600000"></script>
+<script src="js/modern.js?v=1795600000"></script>
+<script src="js/chef.js?v=1795600000"></script>
 </body>
 </html>

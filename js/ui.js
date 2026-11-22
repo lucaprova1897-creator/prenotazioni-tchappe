@@ -7444,6 +7444,7 @@ const UI = {
     tableBookings.forEach(b => {
       const row = document.createElement('div');
       row.className = 'ro-row chef-row' + (b.arrivedAt ? ' arrived' : '');
+      row.dataset.id = b.id;
       const { userNotes } = Bookings.splitNotes(b.notes);
       const hotelInfo = Bookings.getHotelInfo(b);
       const isWorkerMenu = Bookings.isWorkerMenu(b);
@@ -7459,7 +7460,9 @@ const UI = {
             (Bookings.getStayVisitNumber(b) ? ' · ' + (Bookings.getStayVisitNumber(b) === 1 ? '👋 Prima volta' : '🔁 ' + Bookings.getStayVisitNumber(b) + 'ª volta') : '') +
           '</div>' : '') +
           (isWorkerMenu ? '<div class="chef-row-worker-menu">👷 Menu operaio</div>' : '') +
-          this.dietaryAlertHTML(b, true) +
+          // In cucina conta l'allergene: l'avviso "da verificare al tavolo"
+          // (pensato per la sala) compare solo se l'allergene non c'è.
+          (b.intolerances ? '' : this.dietaryAlertHTML(b, true)) +
           (b.intolerances ? '<div class="chef-row-allergy">⚠️ ' + this.escapeHTML(b.intolerances) + '</div>' : '') +
           (userNotes ? '<div class="chef-row-note">📝 ' + this.escapeHTML(userNotes) + '</div>' : '') +
         '</div>';
