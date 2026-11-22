@@ -711,6 +711,10 @@
   wrap(UI, 'renderReadOnlyView', afterReadOnly);
   wrap(UI, 'renderRoEventiPage', afterCalendar);
   wrap(UI, 'openPiattiTab', safe(function () { setup(); }));
+  // Pulsante "Cucina" per gli amministratori: visibile anche se i
+  // permessi sono stati sbloccati col PIN dopo l'ingresso
+  wrap(UI, 'renderDashboard', safe(function () { if (window.updateKitchenSwitch) window.updateKitchenSwitch(); }));
+  wrap(UI, 'renderList', safe(function () { if (window.updateKitchenSwitch) window.updateKitchenSwitch(); }));
   wrap(window, 'renderRoMise', afterMise);
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup);

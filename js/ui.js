@@ -61,6 +61,15 @@ const UI = {
     if ((screenName === 'stats' || screenName === 'projects') && !DB.isFullAdmin()) {
       screenName = 'dashboard';
     }
+    // Amministratore passato alla vista cucina: ogni "torna alla Home/
+    // Lista" (dopo un salvataggio, un indietro...) resta in cucina finché
+    // non tocca "Sala"
+    if (this.state.kitchenMode && (screenName === 'dashboard' || screenName === 'list')) {
+      screenName = 'readonly';
+    }
+    if (screenName === 'readonly') {
+      document.querySelectorAll('.ro-nav-btn').forEach(b => b.classList.toggle('active', b.id === 'roBtnList'));
+    }
     // Uno spostamento tavolo lasciato a metà non deve restare "appeso"
     // se si cambia schermata
     if (screenName !== 'list') this.state.piantinaMoveSource = null;
@@ -5485,7 +5494,7 @@ const UI = {
     this.state.selectedService = data.service;
     // Stesso principio del pulsante "indietro" — un chef principale
     // torna alla sua vista, non alla dashboard admin.
-    this.showScreen(DB.isHeadChef() ? 'readonly' : 'dashboard');
+    this.showScreen(DB.isHeadChef() || this.state.kitchenMode ? 'readonly' : 'dashboard');
     if (saveSucceeded && myBookingId) this.openBookingConfirmationModal(myBookingId, data);
   },
 

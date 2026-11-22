@@ -732,3 +732,36 @@
   .chef-next-badge, #roBookingList .chef-row.chef-flash, #screen-readonly .events-popover { animation: none; }
   .chef-hero .service-toggle.mx-seg::before, .chef-stat, .ro-nav-btn { transition: none; }
 }
+
+/* ==========================================================================
+   AMMINISTRATORI: passaggio Sala ⇄ Cucina (pulsanti a pillola)
+   ========================================================================== */
+#screen-dashboard .topbar .icon-btn.view-switch-btn,
+#screen-list .topbar .icon-btn.view-switch-btn,
+#screen-readonly .topbar .icon-btn.view-switch-btn {
+  width: auto;
+  min-width: 42px;
+  padding: 0 12px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 750;
+  white-space: nowrap;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-color: rgba(122, 32, 56, 0.18);
+}
+.view-switch-btn.hidden { display: none !important; }
+.view-switch-btn .vs-ico { display: inline-flex; }
+.view-switch-btn .vs-ico svg { width: 19px; height: 19px; }
+#screen-dashboard .topbar .icon-btn.view-switch-btn:hover,
+#screen-list .topbar .icon-btn.view-switch-btn:hover,
+#screen-readonly .topbar .icon-btn.view-switch-btn:hover { background: #F3DDE4; }
+@media (max-width: 480px) {
+  #screen-dashboard .topbar .icon-btn.view-switch-btn,
+  #screen-list .topbar .icon-btn.view-switch-btn,
+  #screen-readonly .topbar .icon-btn.view-switch-btn { padding: 0; width: 40px; min-width: 40px; }
+  .view-switch-btn .vs-txt { display: none; }
+}

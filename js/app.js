@@ -77,6 +77,10 @@ function bindGlobalDelegation() {
     if (id === 'roMiseBtnLunch') { UI.state.miseService = 'lunch'; renderRoMise(); return; }
     if (id === 'roMiseBtnDinner') { UI.state.miseService = 'dinner'; renderRoMise(); return; }
 
+    // Amministratori: passaggio sala ⇄ cucina
+    if (btn.classList.contains('go-kitchen-btn')) { enterKitchenView(); return; }
+    if (id === 'roBackToSalaBtn') { leaveKitchenView(); return; }
+
     if (id === 'roBtnLunch') {
       UI.state.roService = 'lunch';
       UI.renderReadOnlyView();
@@ -310,6 +314,51 @@ function handleDeepLink() {
   }
 }
 
+/**
+ * Amministratori: dalla propria pagina (sala) possono vedere la vista
+ * cucina e tornare indietro, senza uscire e rientrare. Non cambia chi
+ * sono né cosa possono fare: cambia solo la schermata. Lo stato vive in
+ * UI.state.kitchenMode (si azzera a ogni ingresso, vedi enterApp).
+ */
+function canSwitchToKitchen() {
+  return DB.isLoggedIn() && DB.getRole() !== 'read' && DB.isFullAdmin();
+}
+
+function updateKitchenSwitch() {
+  const can = canSwitchToKitchen();
+  document.querySelectorAll('.go-kitchen-btn').forEach(b => b.classList.toggle('hidden', !can));
+  const inKitchen = !!UI.state.kitchenMode;
+  document.getElementById('roBackToSalaBtn')?.classList.toggle('hidden', !inKitchen);
+  // Nella vista cucina l'amministratore torna in sala: si esce da lì
+  document.getElementById('roLogoutBtn')?.classList.toggle('hidden', inKitchen);
+}
+
+function enterKitchenView() {
+  if (!canSwitchToKitchen()) return;
+  UI.state.kitchenMode = true;
+  // stesso giorno e stesso servizio che si stavano guardando
+  UI.state.roService = UI.state.selectedService || UI.state.roService;
+  document.getElementById('bottomNav').style.display = 'none';
+  document.getElementById('roBottomNav').style.display = 'flex';
+  bindReadOnly();
+  updateKitchenSwitch();
+  UI.showScreen('readonly');
+  switchRoTab('screen-readonly', 'roBtnList');
+  try { window.scrollTo(0, 0); document.body.scrollTop = 0; } catch (e) { /* ignora */ }
+}
+
+function leaveKitchenView() {
+  UI.state.kitchenMode = false;
+  if (UI.state.roService) UI.state.selectedService = UI.state.roService;
+  ['roEventsPopover', 'roTakeawayPopover'].forEach(id => document.getElementById(id)?.classList.add('hidden'));
+  document.getElementById('roBottomNav').style.display = 'none';
+  document.getElementById('bottomNav').style.display = 'flex';
+  updateKitchenSwitch();
+  UI.showScreen('dashboard');
+  try { window.scrollTo(0, 0); document.body.scrollTop = 0; } catch (e) { /* ignora */ }
+}
+window.updateKitchenSwitch = updateKitchenSwitch;
+
 async function enterApp() {
   // Mostra/nasconde pulsanti di modifica in base al ruolo
   const canEdit = DB.canEdit();
@@ -323,6 +372,9 @@ async function enterApp() {
     el.classList.toggle('hidden', !canEdit);
   });
   document.getElementById('roManageAccessBtn')?.classList.toggle('hidden', !DB.isHeadChef());
+  // Ogni ingresso parte dalla vista del proprio ruolo
+  UI.state.kitchenMode = false;
+  updateKitchenSwitch();
 
   // Inizializza stato navigazione — servizio (ed eventualmente giorno) già
   // avanzati in automatico se il servizio corrente è chiuso da un po'
@@ -819,7 +871,7 @@ function bindForm() {
   document.getElementById('formBackBtn').addEventListener('click', () => {
     // Un chef principale non deve mai finire sulla dashboard/lista admin
     // — resta sulla sua vista di sempre.
-    UI.showScreen(DB.isHeadChef() ? 'readonly' : (UI.state.editingBookingId ? 'list' : 'dashboard'));
+    UI.showScreen(DB.isHeadChef() || UI.state.kitchenMode ? 'readonly' : (UI.state.editingBookingId ? 'list' : 'dashboard'));
   });
   document.getElementById('fName').addEventListener('input', () => UI.updateSaveButtonState());
   document.getElementById('peopleMinus').addEventListener('click', () => UI.setPeopleValue(UI._peopleValue - 1));
@@ -995,6 +1047,20 @@ async function autoRefreshMain() {
   }
   if (typeof ODS !== 'undefined') ODS.refresh();
 
+  // Amministratore nella vista cucina: stesso aggiornamento, ma della
+  // lista cucina (mai mentre si scrive o con una finestra aperta)
+  if (UI.state.kitchenMode) {
+    if (!document.getElementById('screen-readonly')?.classList.contains('active')) return;
+    if (document.querySelector('.modal-overlay.active')) return;
+    const a = document.activeElement;
+    if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return;
+    try {
+      await Bookings.loadAll();
+      if (UI.state.kitchenMode) UI.renderReadOnlyView();
+    } catch (e) { console.warn('autoRefreshMain (cucina) fallito:', e.message); }
+    return;
+  }
+
   const screen = UI.state.currentScreen;
   if (screen !== 'dashboard' && screen !== 'list') return;
   if (UI.state.piantinaMoveSource) return;
@@ -1105,7 +1171,9 @@ function bindReadOnly() {
     const active = document.activeElement;
     return active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
   };
-  DB.subscribeRealtime({
+  // Un amministratore che passa alla vista cucina è già in ascolto (vedi
+  // enterApp) e si aggiorna con autoRefreshMain: niente secondo canale.
+  if (DB.getRole() === 'read') DB.subscribeRealtime({
     onConfigChange: (newRow) => {
       // newRow è l'intera riga della tabella configurazione (id,
       // updated_at, zone_tavoli, ecc.) — serve solo il pezzo
@@ -1129,6 +1197,7 @@ function bindReadOnly() {
   // accorga (o se la libreria non si è mai caricata, es. primo avvio
   // offline: qui diventa l'unico modo in cui l'app si aggiorna).
   setInterval(() => {
+    if (DB.getRole() !== 'read') return; // amministratori: ci pensa autoRefreshMain
     if (roIsTyping()) return;
     refreshReadOnly();
   }, 180000);

@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Prenotazioni · Lou Tchappé</title>
 <meta name="theme-color" content="#F6F3EE">
-<link rel="manifest" href="manifest.json?v=1795600000">
+<link rel="manifest" href="manifest.json?v=1795700000">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Prenotazioni">
-<link rel="stylesheet" href="css/styles.css?v=1795600000">
-<link rel="stylesheet" href="css/modern.css?v=1795600000">
-<link rel="stylesheet" href="css/chef.css?v=1795600000">
+<link rel="stylesheet" href="css/styles.css?v=1795700000">
+<link rel="stylesheet" href="css/modern.css?v=1795700000">
+<link rel="stylesheet" href="css/chef.css?v=1795700000">
 </head>
 <body>
 <div id="app">
@@ -51,6 +51,7 @@
       <button class="today-btn hidden" id="dashTodayBtn" title="Torna a oggi">📅 Oggi</button>
       <span class="jump-date-icon" aria-hidden="true">📅</span>
       <input type="date" class="jump-date-input" id="dashJumpDate" title="Vai a una data">
+      <button class="icon-btn view-switch-btn go-kitchen-btn hidden" id="goKitchenBtn" type="button" aria-label="Passa alla vista cucina" title="Passa alla vista cucina"><span class="vs-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14.5V20h10v-5.5M7 14.5a4 4 0 0 1-.6-7.9A5 5 0 0 1 12 3.5a5 5 0 0 1 5.6 3.1 4 4 0 0 1-.6 7.9z"/><path d="M7 17h10"/></svg></span><span class="vs-txt">Cucina</span></button>
       <button class="icon-btn" id="refreshBtn">🔄</button>
     </div>
     <div class="dashboard-content">
@@ -201,6 +202,7 @@
       <button class="today-btn hidden" id="listTodayBtn" title="Torna a oggi">📅 Oggi</button>
       <span class="jump-date-icon" aria-hidden="true">📅</span>
       <input type="date" class="jump-date-input" id="listJumpDate" title="Vai a una data">
+      <button class="icon-btn view-switch-btn go-kitchen-btn hidden" id="goKitchenBtnList" type="button" aria-label="Passa alla vista cucina" title="Passa alla vista cucina"><span class="vs-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 14.5V20h10v-5.5M7 14.5a4 4 0 0 1-.6-7.9A5 5 0 0 1 12 3.5a5 5 0 0 1 5.6 3.1 4 4 0 0 1-.6 7.9z"/><path d="M7 17h10"/></svg></span><span class="vs-txt">Cucina</span></button>
       <button class="icon-btn" id="openPreviewBtn">🖼️</button>
     </div>
     <div class="dashboard-content" style="padding-bottom:0">
@@ -853,6 +855,7 @@
       <button class="icon-btn" id="roPushToggleBtn" aria-label="Notifiche">🔔</button>
       <button class="icon-btn hidden" id="roManageAccessBtn" aria-label="Gestisci accessi">🔐</button>
       <button class="icon-btn" id="roRefreshBtn" aria-label="Aggiorna">🔄</button>
+      <button class="icon-btn view-switch-btn hidden" id="roBackToSalaBtn" type="button" aria-label="Torna alla vista sala" title="Torna alla vista sala"><span class="vs-ico" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H9a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1h2.5a1 1 0 0 0 1-1v-9"/></svg></span><span class="vs-txt">Sala</span></button>
       <button class="icon-btn" id="roLogoutBtn" aria-label="Esci">🚪</button>
     </div>
 
@@ -1378,20 +1381,20 @@
      usarla, e se non c'è prosegue con il controllo periodico di riserva
      invece del tempo reale. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="js/storage.js?v=1795600000"></script>
-<script src="js/slots.js?v=1795600000"></script>
-<script src="js/utils.js?v=1795600000"></script>
-<script src="js/db.js?v=1795600000"></script>
-<script src="js/config.js?v=1795600000"></script>
-<script src="js/bookings.js?v=1795600000"></script>
-<script src="js/buoni.js?v=1795600000"></script>
-<script src="js/piantina.js?v=1795600000"></script>
-<script src="js/stats.js?v=1795600000"></script>
-<script src="js/ods.js?v=1795600000"></script>
-<script src="js/ui.js?v=1795600000"></script>
-<script src="js/piatti.js?v=1795600000"></script>
-<script src="js/app.js?v=1795600000"></script>
-<script src="js/modern.js?v=1795600000"></script>
-<script src="js/chef.js?v=1795600000"></script>
+<script src="js/storage.js?v=1795700000"></script>
+<script src="js/slots.js?v=1795700000"></script>
+<script src="js/utils.js?v=1795700000"></script>
+<script src="js/db.js?v=1795700000"></script>
+<script src="js/config.js?v=1795700000"></script>
+<script src="js/bookings.js?v=1795700000"></script>
+<script src="js/buoni.js?v=1795700000"></script>
+<script src="js/piantina.js?v=1795700000"></script>
+<script src="js/stats.js?v=1795700000"></script>
+<script src="js/ods.js?v=1795700000"></script>
+<script src="js/ui.js?v=1795700000"></script>
+<script src="js/piatti.js?v=1795700000"></script>
+<script src="js/app.js?v=1795700000"></script>
+<script src="js/modern.js?v=1795700000"></script>
+<script src="js/chef.js?v=1795700000"></script>
 </body>
 </html>
